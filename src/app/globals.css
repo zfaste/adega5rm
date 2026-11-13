@@ -4,10 +4,14 @@
 @layer base { * { @apply border-zinc-200; } body { @apply bg-[#f5f8f1] text-[#172017] antialiased; } input,select { @apply w-full rounded-xl border border-[#d5dfcd] bg-white px-3 py-2.5 text-[#172017] outline-none ring-[#24542c] focus:ring-2; } button { @apply transition; } }
 @layer components { .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#24542c] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#183e20]; } }
 
-aside { background:#173f23 !important; box-shadow:inset -1px 0 rgba(255,255,255,.12); }
-aside .grid.h-10.w-10 { background:#fff url('/brand/gabinete-5rm.png') center/84% auto no-repeat !important; border-radius:8px !important; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+aside { background:#fff!important; border-right:1px solid #d7e2d1; box-shadow:none!important; }
+aside .grid.h-10.w-10 { background:#fff url('/brand/gabinete-5rm.png') center/84% auto no-repeat !important; border-radius:6px !important; box-shadow:none!important; }
 aside .grid.h-10.w-10 svg { display:none; }
-main > header { border-bottom:1px solid #dbe4d4; padding-bottom:1.25rem; }
+aside b, aside p, aside .text-stone-300, aside .text-stone-400, aside button, aside a { color:#29412d!important; }
+aside button:hover, aside a:hover { background:#eef5e8!important; }
+aside button[class*="bg-white"], aside button:first-of-type { background:#dcebc9!important; color:#183c23!important; }
+aside .border-t { border-color:#e3ece0!important; }
+main > header { border-bottom:1px solid #d9e4d5; padding-bottom:1.25rem; }
 @media print { aside,nav,button,a { display:none!important } main { margin:0!important; padding:0!important } }
 body > main > form { position:relative; overflow:hidden; }
 body > main > form > svg { display:none; }
@@ -30,4 +34,12 @@ body > main > form button::after { content:'Entrar'; color:#fff; font-size:1rem;
 @media (max-width: 800px) { body > main:has(> form) { display:grid!important; place-items:center!important; padding:2rem!important; } body > main:has(> form)::before,body > main:has(> form)::after { display:none; } body > main > form { width:100%!important; max-width:430px!important; padding:2rem!important; border-radius:20px!important; background:#fff!important; box-shadow:0 18px 48px rgba(20,58,29,.16)!important; } }
 
 /* Dashboard: painel operacional no padrão Gabinete. */
-@media (min-width: 768px) { main { max-width:none!important; } main > header { background:#fff; margin:-2.5rem -2.5rem 1.75rem; padding:1.25rem 2.5rem!important; min-height:68px; display:flex; align-items:center; } main > section { border:1px solid #e0e8da; } }
+/* Tema padrão Gabinete: claro, verde suave, interfaces com borda e sombra discreta. */
+.bg-wine-950,.bg-stone-100 { background:#f4f8ef!important; }
+.bg-cellar-950,.bg-cellar-900 { background:#fff!important; }
+.bg-white\/5 { background:#fff!important; border:1px solid #d9e4d5!important; }
+.bg-white\/10 { background:#fff!important; }
+.shadow-sm { box-shadow:0 1px 3px rgba(24,60,35,.13)!important; }
+.text-gold-500,.text-gold-400 { color:#35573b!important; }
+.btn { background:#20552c!important; border-radius:9px!important; box-shadow:none!important; }
+@media (min-width: 768px) { main { max-width:none!important; } main > header { background:#fff; margin:-2.5rem -2.5rem 1.75rem; padding:1rem 2.5rem!important; min-height:68px; display:flex; align-items:center; box-shadow:0 1px 3px rgba(25,60,30,.08); } main > section { border:1px solid #d9e4d5; } }

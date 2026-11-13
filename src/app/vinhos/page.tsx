@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Filter, Search, Wine } from "lucide-react";
+import { Filter, Plus, Search, SlidersHorizontal, Wine } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { OperationalSidebar } from "@/components/operational-sidebar";
 
 type WineRow = {
   id: string;
@@ -34,23 +35,5 @@ export default function VinhosPage() {
     return text.includes(search.toLocaleLowerCase()) && (type === "Todos" || wine.wine_type === type);
   });
 
-  return <main className="min-h-screen bg-[#f4f8ef] p-5 md:ml-64 md:p-10">
-    <a href="/" className="text-sm text-[#24542c]">← Voltar à Adega</a>
-    <header className="mt-5 flex flex-wrap items-end justify-between gap-4 border-b border-[#d9e4d5] pb-5">
-      <div><p className="text-sm font-medium text-[#24542c]">Acervo institucional</p><h1 className="text-3xl font-semibold">Meus vinhos</h1></div>
-      <a className="btn" href="/scanner">Cadastrar com scanner</a>
-    </header>
-    <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-[#d9e4d5] bg-white p-4 sm:flex-row">
-      <label className="flex flex-1 items-center gap-2"><Search size={18}/><input className="border-0 !p-1 focus:ring-0" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procure por vinho, produtor ou região" /></label>
-      <label className="flex items-center gap-2 text-sm"><Filter size={17}/><select value={type} onChange={(e) => setType(e.target.value)} className="w-40 py-2"><option>Todos</option><option>Tinto</option><option>Branco</option><option>Rosé</option><option>Espumante</option><option>Fortificado</option></select></label>
-    </div>
-    <p className="mt-5 text-sm text-zinc-500">{filtered.length} rótulo(s) encontrado(s)</p>
-    <section className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{filtered.map((wine) => <article key={wine.id} className="rounded-2xl border border-[#d9e4d5] bg-white p-5 shadow-sm">
-      <Wine className="text-[#24542c]"/><div className="mt-4 flex items-start justify-between gap-2"><div><p className="text-xs text-zinc-500">{wine.producer ?? wine.brand ?? "Produtor não informado"}</p><h2 className="font-semibold">{wine.name}</h2></div>{wine.vintage && <span className="rounded-full bg-[#edf4e7] px-2 py-1 text-xs">{wine.vintage}</span>}</div>
-      <p className="mt-3 text-sm text-zinc-600">{[wine.wine_type, wine.region, wine.country].filter(Boolean).join(" · ")}</p>
-      {wine.grapes?.length ? <p className="mt-2 text-sm text-zinc-500">{wine.grapes.join(", ")}</p> : null}
-      <div className="mt-4 flex items-center justify-between border-t pt-3 text-sm"><span>{wine.maturity_stage ?? "Maturidade não informada"}</span><b>{wine.estimated_value ? wine.estimated_value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "Valor a apurar"}</b></div>
-    </article>)}</section>
-    {!filtered.length && <div className="mt-10 rounded-2xl border border-dashed border-[#cbd9c4] p-10 text-center text-zinc-500">Nenhum vinho corresponde aos filtros. Cadastre um rótulo pela operação diária ou pelo scanner.</div>}
-  </main>;
+  return <div className="min-h-screen bg-white"><OperationalSidebar active="/vinhos"/><main className="md:ml-56"><header className="flex min-h-[86px] flex-wrap items-center justify-between gap-3 border-b border-[#f0f1f2] px-5 py-4 md:px-7"><div><p className="text-sm font-medium text-[#236135]">Acervo institucional</p><h1 className="text-3xl font-bold text-zinc-800">Meus vinhos</h1></div><a className="oeni-button" href="/scanner"><Plus size={18}/>Adicionar vinho</a></header><div className="px-5 py-6 md:px-7"><div className="flex flex-col gap-3 rounded-2xl bg-[#f6f7f8] p-3 lg:flex-row"><label className="flex flex-1 items-center gap-2 rounded-xl bg-white px-3"><Search size={19} className="text-zinc-400"/><input className="border-0 bg-transparent !p-2 focus:ring-0" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procure um vinho no acervo" /></label><label className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium"><SlidersHorizontal size={17}/><select value={type} onChange={(e) => setType(e.target.value)} className="w-40 border-0 bg-transparent !p-2 focus:ring-0"><option>Todos</option><option>Tinto</option><option>Branco</option><option>Rosé</option><option>Espumante</option><option>Fortificado</option></select></label></div><div className="mt-6 flex items-center justify-between"><p className="text-sm oeni-muted">{filtered.length} rótulo(s) encontrado(s)</p><span className="hidden text-sm text-zinc-500 sm:flex sm:items-center sm:gap-2"><Filter size={16}/>Filtro ativo: {type}</span></div><section className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((wine) => <article key={wine.id} className="oeni-card group flex gap-4 p-4 transition hover:-translate-y-0.5 hover:shadow-md"><div className="grid h-24 w-20 shrink-0 place-items-center rounded-xl bg-[linear-gradient(155deg,#285e35,#7eb05f)]"><Wine className="text-white" size={28}/></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-xs oeni-muted">{wine.producer ?? wine.brand ?? "Produtor não informado"}</p><h2 className="mt-1 font-bold text-zinc-800">{wine.name}</h2></div>{wine.vintage && <span className="rounded-full bg-[#eaf3e6] px-2 py-1 text-xs font-bold text-[#236135]">{wine.vintage}</span>}</div><p className="mt-3 text-sm text-zinc-600">{[wine.wine_type, wine.region, wine.country].filter(Boolean).join(" · ")}</p>{wine.grapes?.length ? <p className="mt-1 truncate text-sm oeni-muted">{wine.grapes.join(", ")}</p> : null}<div className="mt-3 flex items-center justify-between border-t border-[#edf0ed] pt-3 text-xs"><span className="text-[#236135]">{wine.maturity_stage ?? "Maturidade a avaliar"}</span><b>{wine.estimated_value ? wine.estimated_value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "Valor a apurar"}</b></div></div></article>)}</section>{!filtered.length && <div className="mt-10 rounded-2xl border border-dashed border-[#dfe7dc] p-12 text-center text-zinc-500"><Wine className="mx-auto mb-3 text-[#236135]"/>Nenhum vinho corresponde aos filtros. Use o scanner para registrar o primeiro rótulo.</div>}</div></main></div>;
 }

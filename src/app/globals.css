@@ -1,45 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@layer base { * { @apply border-zinc-200; } body { @apply bg-[#f5f8f1] text-[#172017] antialiased; } input,select { @apply w-full rounded-xl border border-[#d5dfcd] bg-white px-3 py-2.5 text-[#172017] outline-none ring-[#24542c] focus:ring-2; } button { @apply transition; } }
-@layer components { .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#24542c] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#183e20]; } }
-
-aside { background:#fff!important; border-right:1px solid #d7e2d1; box-shadow:none!important; }
-aside .grid.h-10.w-10 { background:#fff url('/brand/gabinete-5rm.png') center/84% auto no-repeat !important; border-radius:6px !important; box-shadow:none!important; }
-aside .grid.h-10.w-10 svg { display:none; }
-aside b, aside p, aside .text-stone-300, aside .text-stone-400, aside button, aside a { color:#29412d!important; }
-aside button:hover, aside a:hover { background:#eef5e8!important; }
-aside button[class*="bg-white"], aside button:first-of-type { background:#dcebc9!important; color:#183c23!important; }
-aside .border-t { border-color:#e3ece0!important; }
-main > header { border-bottom:1px solid #d9e4d5; padding-bottom:1.25rem; }
-@media print { aside,nav,button,a { display:none!important } main { margin:0!important; padding:0!important } }
-body > main > form { position:relative; overflow:hidden; }
-body > main > form > svg { display:none; }
-body > main > form::before { content:''; display:block; width:86px; height:104px; margin-bottom:1.5rem; background:url('/brand/gabinete-5rm.png') center/contain no-repeat; }
-
-/* Tela de autenticação: composição institucional em duas colunas. */
-body:has(> main > form) { background:#f7f9f4; }
-body > main:has(> form) { position:relative; display:flex!important; min-height:100vh; justify-content:flex-end; align-items:center; padding:0 14% 0 50%!important; background:#fbfcf8!important; overflow:hidden; }
-body > main:has(> form)::before { content:'Gabinete da 5ª Região Militar\A\A Sistema de controle e gestão da adega.'; white-space:pre-line; box-sizing:border-box; position:absolute; inset:0 auto 0 0; width:50%; display:flex; align-items:center; padding:0 52px; transform:translateY(-46px); color:#fff; font-size:2.45rem; line-height:1.25; font-weight:700; background:#1d4f29; z-index:0; }
-body > main:has(> form)::after { content:''; position:absolute; left:76px; top:6.6%; width:112px; height:158px; background:url('/brand/gabinete-5rm.png') center/contain no-repeat; z-index:1; }
-body > main > form { z-index:2; width:422px!important; max-width:422px!important; transform:translateY(-60px); padding:0!important; border:0!important; border-radius:0!important; background:transparent!important; box-shadow:none!important; color:#18351e!important; }
-body > main > form::before { display:none; }
-body > main > form h1 { color:transparent!important; font-size:0!important; }
-body > main > form h1::after { content:'Entrar'; color:#17351d; font-size:1.75rem; font-weight:700; }
-body > main > form p { color:transparent!important; font-size:0!important; }
-body > main > form p::after { content:'Use seu e-mail e senha para acessar.'; color:#61715f; font-size:.95rem; }
-body > main > form label { color:#26452c!important; }
-body > main > form button { background:#20512b!important; color:transparent!important; border-radius:8px!important; font-size:0!important; }
-body > main > form button::after { content:'Entrar'; color:#fff; font-size:1rem; }
-@media (max-width: 800px) { body > main:has(> form) { display:grid!important; place-items:center!important; padding:2rem!important; } body > main:has(> form)::before,body > main:has(> form)::after { display:none; } body > main > form { width:100%!important; max-width:430px!important; padding:2rem!important; border-radius:20px!important; background:#fff!important; box-shadow:0 18px 48px rgba(20,58,29,.16)!important; } }
-
-/* Dashboard: painel operacional no padrão Gabinete. */
-/* Tema padrão Gabinete: claro, verde suave, interfaces com borda e sombra discreta. */
-.bg-wine-950,.bg-stone-100 { background:#f4f8ef!important; }
-.bg-cellar-950,.bg-cellar-900 { background:#fff!important; }
-.bg-white\/5 { background:#fff!important; border:1px solid #d9e4d5!important; }
-.bg-white\/10 { background:#fff!important; }
-.shadow-sm { box-shadow:0 1px 3px rgba(24,60,35,.13)!important; }
-.text-gold-500,.text-gold-400 { color:#35573b!important; }
-.btn { background:#20552c!important; border-radius:9px!important; box-shadow:none!important; }
-@media (min-width: 768px) { main { max-width:none!important; } main > header { background:#fff; margin:-2.5rem -2.5rem 1.75rem; padding:1rem 2.5rem!important; min-height:68px; display:flex; align-items:center; box-shadow:0 1px 3px rgba(25,60,30,.08); } main > section { border:1px solid #d9e4d5; } }
+@layer base { *{box-sizing:border-box} body{margin:0;background:#fff;color:#3e3e43;font-family:Arial,Helvetica,sans-serif} input,select,textarea{width:100%;border:1px solid #dfe3e8;border-radius:10px;background:#f1f3f6;padding:.72rem .9rem;color:#3e3e43;outline:none} input:focus,select:focus,textarea:focus{border-color:#cb824c;box-shadow:0 0 0 3px rgba(203,130,76,.14)} button{font:inherit} }
+@layer components { .oeni-button{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border:0;border-radius:999px;background:#c9814e;color:#fff;padding:.7rem 1.1rem;font-size:.9rem;font-weight:700;box-shadow:0 4px 10px rgba(91,53,31,.17);transition:.18s ease}.oeni-button:hover{transform:translateY(-1px);background:#b66f3f}.oeni-card{border:1px solid #e6e8ec;border-radius:16px;background:#fff;box-shadow:0 1px 3px rgba(26,30,38,.04)}.oeni-muted{color:#8d9098} }
+/* Login institucional; a área logada usa a interface clara padronizada. */
+body:has(> main > form){background:#f7f9f4} body>main:has(>form){position:relative;display:flex!important;min-height:100vh;align-items:center;justify-content:flex-end;overflow:hidden;padding:0 14% 0 50%!important;background:#fbfcf8!important} body>main:has(>form)::before{content:'Gabinete da 5ª Região Militar\A\A Sistema de controle e gestão da adega.';white-space:pre-line;position:absolute;inset:0 auto 0 0;display:flex;width:50%;align-items:center;padding:0 52px;transform:translateY(-46px);color:#fff;background:#1d4f29;font-size:2.45rem;font-weight:700;line-height:1.25} body>main:has(>form)::after{content:'';position:absolute;z-index:1;left:76px;top:6.6%;width:112px;height:158px;background:url('/brand/gabinete-5rm.png') center/contain no-repeat} body>main>form{z-index:2;width:422px!important;max-width:422px!important;border:0!important;border-radius:0!important;padding:0!important;color:#18351e!important;background:transparent!important;box-shadow:none!important} body>main>form>svg{display:none} body>main>form h1{font-size:0!important} body>main>form h1::after{content:'Entrar';font-size:1.75rem;color:#17351d} body>main>form p{color:transparent!important;font-size:0!important} body>main>form p::after{content:'Use seu e-mail e senha para acessar.';color:#61715f;font-size:.95rem} body>main>form button{border-radius:8px!important;background:#20512b!important;color:#fff!important}@media(max-width:800px){body>main:has(>form){display:grid!important;place-items:center!important;padding:2rem!important}body>main:has(>form)::before,body>main:has(>form)::after{display:none}body>main>form{width:100%!important;padding:2rem!important;border-radius:20px!important;background:#fff!important;box-shadow:0 18px 48px rgba(20,58,29,.16)!important}}

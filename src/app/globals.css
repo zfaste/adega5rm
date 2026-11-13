@@ -15,15 +15,18 @@ body > main > form::before { content:''; display:block; width:86px; height:104px
 
 /* Tela de autenticação: composição institucional em duas colunas. */
 body:has(> main > form) { background:#f7f9f4; }
-body > main:has(> form) { position:relative; display:flex!important; min-height:100vh; justify-content:flex-end; align-items:center; padding:0 13% 0 50%!important; background:#f7f9f4!important; overflow:hidden; }
-body > main:has(> form)::before { content:'Gabinete da 5ª Região Militar\A\A Sistema institucional de gestão e controle da adega.'; white-space:pre-line; position:absolute; inset:0 auto 0 0; width:43%; display:flex; align-items:center; padding:0 12%; color:#fff; font-size:2.55rem; line-height:1.2; font-weight:700; background:#194b28; z-index:0; }
-body > main:has(> form)::after { content:''; position:absolute; left:11%; top:14%; width:112px; height:138px; background:url('/brand/gabinete-5rm.png') center/contain no-repeat; z-index:1; }
-body > main > form { z-index:2; width:430px!important; max-width:430px!important; padding:0!important; border:0!important; border-radius:0!important; background:transparent!important; box-shadow:none!important; color:#18351e!important; }
+body > main:has(> form) { position:relative; display:flex!important; min-height:100vh; justify-content:flex-end; align-items:center; padding:0 14% 0 50%!important; background:#fbfcf8!important; overflow:hidden; }
+body > main:has(> form)::before { content:'Gabinete da 5ª Região Militar\A\A Sistema de controle e gestão da adega.'; white-space:pre-line; box-sizing:border-box; position:absolute; inset:0 auto 0 0; width:50%; display:flex; align-items:center; padding:0 52px; transform:translateY(-46px); color:#fff; font-size:2.45rem; line-height:1.25; font-weight:700; background:#1d4f29; z-index:0; }
+body > main:has(> form)::after { content:''; position:absolute; left:76px; top:6.6%; width:112px; height:158px; background:url('/brand/gabinete-5rm.png') center/contain no-repeat; z-index:1; }
+body > main > form { z-index:2; width:422px!important; max-width:422px!important; transform:translateY(-60px); padding:0!important; border:0!important; border-radius:0!important; background:transparent!important; box-shadow:none!important; color:#18351e!important; }
 body > main > form::before { display:none; }
-body > main > form h1 { color:#18351e!important; font-size:2rem!important; }
-body > main > form p { color:#61715f!important; }
+body > main > form h1 { color:transparent!important; font-size:0!important; }
+body > main > form h1::after { content:'Entrar'; color:#17351d; font-size:1.75rem; font-weight:700; }
+body > main > form p { color:transparent!important; font-size:0!important; }
+body > main > form p::after { content:'Use seu e-mail e senha para acessar.'; color:#61715f; font-size:.95rem; }
 body > main > form label { color:#26452c!important; }
-body > main > form button { background:#20512b!important; color:#fff!important; border-radius:8px!important; }
+body > main > form button { background:#20512b!important; color:transparent!important; border-radius:8px!important; font-size:0!important; }
+body > main > form button::after { content:'Entrar'; color:#fff; font-size:1rem; }
 @media (max-width: 800px) { body > main:has(> form) { display:grid!important; place-items:center!important; padding:2rem!important; } body > main:has(> form)::before,body > main:has(> form)::after { display:none; } body > main > form { width:100%!important; max-width:430px!important; padding:2rem!important; border-radius:20px!important; background:#fff!important; box-shadow:0 18px 48px rgba(20,58,29,.16)!important; } }
 
 /* Dashboard: painel operacional no padrão Gabinete. */

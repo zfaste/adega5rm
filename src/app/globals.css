@@ -5,10 +5,26 @@
 @layer components { .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#24542c] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#183e20]; } }
 
 aside { background:#173f23 !important; box-shadow:inset -1px 0 rgba(255,255,255,.12); }
-aside > div > div:first-child > span { background:#fff url('/brand/gabinete-5rm.png') center/85% auto no-repeat !important; border-radius:10px !important; box-shadow:0 1px 3px rgba(0,0,0,.25); }
-aside > div > div:first-child > span svg { display:none; }
+aside .grid.h-10.w-10 { background:#fff url('/brand/gabinete-5rm.png') center/84% auto no-repeat !important; border-radius:8px !important; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+aside .grid.h-10.w-10 svg { display:none; }
 main > header { border-bottom:1px solid #dbe4d4; padding-bottom:1.25rem; }
 @media print { aside,nav,button,a { display:none!important } main { margin:0!important; padding:0!important } }
 body > main > form { position:relative; overflow:hidden; }
 body > main > form > svg { display:none; }
 body > main > form::before { content:''; display:block; width:86px; height:104px; margin-bottom:1.5rem; background:url('/brand/gabinete-5rm.png') center/contain no-repeat; }
+
+/* Tela de autenticação: composição institucional em duas colunas. */
+body:has(> main > form) { background:#f7f9f4; }
+body > main:has(> form) { position:relative; display:flex!important; min-height:100vh; justify-content:flex-end; align-items:center; padding:0 13% 0 50%!important; background:#f7f9f4!important; overflow:hidden; }
+body > main:has(> form)::before { content:'Gabinete da 5ª Região Militar\A\A Sistema institucional de gestão e controle da adega.'; white-space:pre-line; position:absolute; inset:0 auto 0 0; width:43%; display:flex; align-items:center; padding:0 12%; color:#fff; font-size:2.55rem; line-height:1.2; font-weight:700; background:#194b28; z-index:0; }
+body > main:has(> form)::after { content:''; position:absolute; left:11%; top:14%; width:112px; height:138px; background:url('/brand/gabinete-5rm.png') center/contain no-repeat; z-index:1; }
+body > main > form { z-index:2; width:430px!important; max-width:430px!important; padding:0!important; border:0!important; border-radius:0!important; background:transparent!important; box-shadow:none!important; color:#18351e!important; }
+body > main > form::before { display:none; }
+body > main > form h1 { color:#18351e!important; font-size:2rem!important; }
+body > main > form p { color:#61715f!important; }
+body > main > form label { color:#26452c!important; }
+body > main > form button { background:#20512b!important; color:#fff!important; border-radius:8px!important; }
+@media (max-width: 800px) { body > main:has(> form) { display:grid!important; place-items:center!important; padding:2rem!important; } body > main:has(> form)::before,body > main:has(> form)::after { display:none; } body > main > form { width:100%!important; max-width:430px!important; padding:2rem!important; border-radius:20px!important; background:#fff!important; box-shadow:0 18px 48px rgba(20,58,29,.16)!important; } }
+
+/* Dashboard: painel operacional no padrão Gabinete. */
+@media (min-width: 768px) { main { max-width:none!important; } main > header { background:#fff; margin:-2.5rem -2.5rem 1.75rem; padding:1.25rem 2.5rem!important; min-height:68px; display:flex; align-items:center; } main > section { border:1px solid #e0e8da; } }

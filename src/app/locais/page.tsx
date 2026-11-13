@@ -1,0 +1,13 @@
+"use client";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { MapPin, Plus, Warehouse } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+
+type Location={id:string;name:string;min_stock:number};
+export default function Locais(){
+ const supabase=useMemo(createClient,[]);const [items,setItems]=useState<Location[]>([]);const [name,setName]=useState('');const [minimum,setMinimum]=useState(0);const [message,setMessage]=useState('');
+ const load=async()=>{const {data,error}=await supabase.from('locations').select('id,name,min_stock').order('name');if(error)setMessage(error.message);else setItems(data??[])};
+ useEffect(()=>{load()},[]);
+ const add=async(e:FormEvent)=>{e.preventDefault();const {error}=await supabase.from('locations').insert({name,min_stock:minimum});if(error)return setMessage(error.message);setName('');setMinimum(0);setMessage('Local cadastrado.');load()};
+ return <main className="min-h-screen bg-wine-950 p-5 text-stone-100 md:p-10"><div className="mx-auto max-w-4xl"><a href="/" className="text-sm text-gold-400">← Voltar à Adega</a><header className="mb-8 mt-4"><p className="text-sm text-gold-400">Configuração administrativa</p><h1 className="text-3xl font-semibold">Locais e prateleiras</h1><p className="mt-2 text-sm text-stone-400">Defina onde as garrafas ficam guardadas antes de registrar entradas ou iniciar inventários.</p></header><form onSubmit={add} className="grid gap-3 rounded-2xl bg-white/5 p-5 md:grid-cols-[1fr_150px_auto]"><input required value={name} onChange={e=>setName(e.target.value)} placeholder="Ex.: Adega principal — Prateleira A" className="rounded-lg bg-white/10 p-3 outline-none ring-gold-400 focus:ring-2"/><input min="0" type="number" value={minimum} onChange={e=>setMinimum(Number(e.target.value))} className="rounded-lg bg-white/10 p-3 outline-none ring-gold-400 focus:ring-2" title="Estoque mínimo"/><button className="flex items-center justify-center gap-2 rounded-lg bg-gold-400 px-4 py-3 font-semibold text-wine-950"><Plus size={18}/>Adicionar</button></form>{message&&<p className="mt-4 rounded-lg bg-white/10 p-3 text-sm">{message}</p>}<section className="mt-6 grid gap-3 sm:grid-cols-2">{items.map(item=><article key={item.id} className="rounded-2xl border border-white/10 bg-white/5 p-5"><div className="flex items-start justify-between"><MapPin className="text-gold-400"/><span className="text-xs text-stone-400">mínimo: {item.min_stock}</span></div><h2 className="mt-4 font-semibold">{item.name}</h2></article>)}{items.length===0&&<div className="rounded-2xl border border-dashed border-white/15 p-10 text-center text-stone-400 sm:col-span-2"><Warehouse className="mx-auto mb-3"/>Nenhum local cadastrado.</div>}</section></div></main>;
+}

@@ -1,5 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@layer base { * { @apply border-zinc-200 dark:border-white/10; } body { @apply bg-stone-50 text-zinc-900 antialiased dark:bg-wine-950 dark:text-stone-100; } input,select { @apply w-full rounded-xl border-0 bg-zinc-100 px-3 py-2.5 text-zinc-900 outline-none ring-gold-400 focus:ring-2 dark:bg-white/10 dark:text-white; } button { @apply transition; } }
-@layer components { .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gold-400 px-4 py-2.5 text-sm font-semibold text-wine-950 hover:bg-gold-500; } }
+@layer base { * { @apply border-zinc-200; } body { @apply bg-[#f5f8f1] text-[#172017] antialiased; } input,select { @apply w-full rounded-xl border border-[#d5dfcd] bg-white px-3 py-2.5 text-[#172017] outline-none ring-[#24542c] focus:ring-2; } button { @apply transition; } }
+@layer components { .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#24542c] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#183e20]; } }
+
+aside { background:#173f23 !important; box-shadow:inset -1px 0 rgba(255,255,255,.12); }
+aside > div > div:first-child > span { background:#fff url('/brand/gabinete-5rm.png') center/85% auto no-repeat !important; border-radius:10px !important; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+aside > div > div:first-child > span svg { display:none; }
+main > header { border-bottom:1px solid #dbe4d4; padding-bottom:1.25rem; }
+@media print { aside,nav,button,a { display:none!important } main { margin:0!important; padding:0!important } }
+body > main > form { position:relative; overflow:hidden; }
+body > main > form > svg { display:none; }
+body > main > form::before { content:''; display:block; width:86px; height:104px; margin-bottom:1.5rem; background:url('/brand/gabinete-5rm.png') center/contain no-repeat; }

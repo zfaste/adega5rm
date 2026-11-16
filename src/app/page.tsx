@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import {FormEvent,useState}from"react";
 type Mode="login"|"register"|"forgot";

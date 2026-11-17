@@ -1,3 +1,49 @@
 "use client";
-import {FormEvent,useState}from"react";type Mode="login"|"register"|"forgot";
-export default function Home(){const[mode,setMode]=useState<Mode>("login"),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[confirm,setConfirm]=useState(""),[message,setMessage]=useState("");const submit=async(e:FormEvent)=>{e.preventDefault();if(mode==="register"&&password!==confirm)return setMessage("As senhas não coincidem.");const r=await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:mode,email,password})});const d=await r.json();if(!r.ok)return setMessage(d.error);if(mode==="login")window.location.href="/painel";else setMessage(d.message)};const heading=mode==="login"?"Entrar":mode==="register"?"Criar conta":"Recuperar senha";return <main style={{minHeight:"100vh",display:"grid",gridTemplateColumns:"43% 57%",fontFamily:"Arial, sans-serif",background:"#fcfbfa"}}><section style={{display:"flex",position:"relative",flexDirection:"column",justifyContent:"center",gap:38,padding:"8vw",color:"white",background:"radial-gradient(circle at 18% 12%,#8e2946,#68172f 42%,#3f0d1d)"}}><div style={{display:"grid",placeItems:"center",width:88,height:108,border:"2px solid #e8c57c",borderRadius:"12px 12px 38px 38px",background:"#fff9ef",color:"#68172f",fontWeight:800,fontSize:25}}>5ª<br/>RM</div><div><h1 style={{margin:0,fontSize:"clamp(34px,4vw,56px)",lineHeight:1.05}}>Adega da<br/>5ª Região Militar</h1><p style={{maxWidth:420,color:"#f1dce1",fontSize:18,lineHeight:1.55}}>Sistema institucional para gestão, controle e rastreabilidade do acervo de vinhos.</p></div><p style={{position:"absolute",bottom:36,color:"#dfb8c4",fontSize:11,fontWeight:700,letterSpacing:1.2}}>GESTÃO DE ADEGA · ACESSO RESTRITO</p></section><section style={{display:"grid",placeItems:"center",padding:32}}><div style={{width:"100%",maxWidth:420}}><p style={{margin:0,color:"#791a35",fontSize:12,fontWeight:800,letterSpacing:1.3}}>ADEGA 5ª RM</p><h2 style={{margin:"12px 0 8px",fontSize:34,color:"#261e21"}}>{heading}</h2><p style={{margin:0,color:"#777075",lineHeight:1.5}}>{mode==="login"?"Use seu e-mail e senha para acessar o sistema.":mode==="register"?"Crie sua conta para começar a usar a Adega.":"Informe seu e-mail para receber as instruções."}</p><form onSubmit={submit}style={{display:"grid",gap:17,marginTop:28}}><label style={{fontWeight:700,fontSize:14}}>E-mail<input required type="email"value={email}onChange={e=>setEmail(e.target.value)}placeholder="nome@exemplo.com"style={input}/></label>{mode!=="forgot"&&<><label style={{fontWeight:700,fontSize:14}}>Senha<input required type="password"value={password}onChange={e=>setPassword(e.target.value)}placeholder="Mínimo de 6 caracteres"style={input}/></label>{mode==="register"&&<label style={{fontWeight:700,fontSize:14}}>Confirmar senha<input required type="password"value={confirm}onChange={e=>setConfirm(e.target.value)}style={input}/></label>}</>}<button style={{border:0,borderRadius:9,padding:"14px",background:"#68172f",color:"white",fontWeight:800,cursor:"pointer"}}>{mode==="login"?"Entrar":mode==="register"?"Criar conta":"Enviar instruções"}</button></form>{message&&<p style={{padding:12,borderRadius:9,background:"#f7e8ec",color:"#68172f"}}>{message}</p>}<div style={{display:"grid",gap:14,marginTop:26,textAlign:"center"}}>{mode==="login"?<><button style={link}onClick={()=>setMode("forgot")}>Esqueci minha senha</button><button style={link}onClick={()=>setMode("register")}>Não tem conta? <b>Cadastre-se</b></button></>:<button style={link}onClick={()=>setMode("login")}>← Voltar para entrar</button>}</div></div></section></main>};const input={display:"block",width:"100%",boxSizing:"border-box" as const,marginTop:7,padding:"13px",border:"1px solid #dacfd2",borderRadius:9,fontSize:15};const link={border:0,background:"transparent",color:"#68172f",fontSize:14,cursor:"pointer"};
+
+import { FormEvent, useState } from "react";
+
+type Mode = "login" | "register" | "forgot";
+
+const inputStyle = { display: "block", width: "100%", marginTop: 7, padding: "13px", border: "1px solid #dacfd2", borderRadius: 9, fontSize: 15 };
+
+export default function Home() {
+  const [mode, setMode] = useState<Mode>("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [message, setMessage] = useState("");
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault(); setMessage("");
+    if (mode === "register" && password !== confirm) return setMessage("As senhas não coincidem.");
+    const response = await fetch("/api/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: mode, email, password }) });
+    const data = await response.json();
+    if (!response.ok) return setMessage(data.error);
+    if (mode === "login") window.location.href = "/painel";
+    else setMessage(data.message);
+  };
+
+  const heading = mode === "login" ? "Entrar" : mode === "register" ? "Criar conta" : "Recuperar senha";
+  const description = mode === "login" ? "Use seu e-mail e senha para acessar o sistema." : mode === "register" ? "Crie sua conta para começar a usar a Adega." : "Informe seu e-mail para receber as instruções.";
+
+  return <main className="auth-shell">
+    <section className="auth-identity">
+      <div className="identity-content">
+        <img className="identity-emblem" src="/brand/gabinete-5rm-bordo.png" alt="Símbolo do Gabinete da 5ª Região Militar" />
+        <div><h1>Adega da<br />5ª Região Militar</h1><p>Sistema institucional para gestão, controle e rastreabilidade do acervo de vinhos.</p></div>
+      </div>
+      <span>GESTÃO DE ADEGA · ACESSO RESTRITO</span>
+    </section>
+    <section className="auth-form-area"><div className="auth-form-card">
+      <p className="eyebrow">ADEGA 5ª RM</p><h2>{heading}</h2><p className="form-description">{description}</p>
+      <form onSubmit={submit}>
+        <label>E-mail<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nome@exemplo.com" style={inputStyle} /></label>
+        {mode !== "forgot" && <label>Senha<input required type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 6 caracteres" style={inputStyle} /></label>}
+        {mode === "register" && <label>Confirmar senha<input required type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} style={inputStyle} /></label>}
+        <button className="primary-button">{mode === "login" ? "Entrar" : mode === "register" ? "Criar conta" : "Enviar instruções"}</button>
+      </form>
+      {message && <p className="form-message">{message}</p>}
+      <div className="auth-links">{mode === "login" ? <><button onClick={() => setMode("forgot")}>Esqueci minha senha</button><button onClick={() => setMode("register")}>Não tem conta? <b>Cadastre-se</b></button></> : <button onClick={() => setMode("login")}>← Voltar para entrar</button>}</div>
+    </div></section>
+  </main>;
+}

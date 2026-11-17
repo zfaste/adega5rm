@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { WineImporter } from "./wine-importer";
 import { WineActions } from "./wine-actions";
+import { WineCatalog } from "./wine-catalog";
 
 const url = process.env.SUPABASE_URL!;
 const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
@@ -21,6 +22,7 @@ export default async function Painel() {
     <section className="dashboard-content">
       <header className="dashboard-header"><div><p>VISÃO GERAL</p><h1>Painel da Adega</h1></div><div className="status"><i /> Sistema ativo</div></header>
       <section className="summary-grid" aria-label="Resumo do estoque">{summary.map((item) => <article className="summary-card" key={item.label}><p>{item.label}</p><strong>{item.value}</strong><span>{item.detail}</span></article>)}</section>
+      <WineCatalog />
       {wines.length > 0 && <WineActions wines={wines.map((wine) => ({ id: wine.id, name: wine.name, currentStock: wine.current_stock }))} />}
       {!wines.length && <section className="import-box"><div><p>IMPORTAÇÃO INICIAL</p><h2>Carregue seu estoque atual</h2><span>Use o CSV exportado da planilha. O sistema valida os totais antes de gravar os dados.</span></div><WineImporter /></section>}
       <section className="wine-list" id="relacao"><div className="section-heading"><div><p>CONTROLE DE ESTOQUE</p><h2>Relação de vinhos</h2></div><span>{wines.length ? `${wines.length} rótulos cadastrados` : "Aguardando importação"}</span></div><div className="table-wrap"><table><thead><tr><th>Nome do vinho</th><th>Valor</th><th>Quantidade inicial</th><th>Saídas históricas</th><th>Em adega</th><th>Status</th><th>Observações</th></tr></thead><tbody>{wines.length ? wines.map((wine) => <tr key={wine.id}><td><strong>{wine.name}</strong></td><td>{wine.unit_value ? wine.unit_value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "-"}</td><td>{wine.initial_quantity}</td><td>{wine.quantity_out}</td><td>{wine.current_stock}</td><td><span className={wine.current_stock < 0 ? "stock-tag discrepancy" : wine.current_stock <= 2 ? "stock-tag low" : "stock-tag"}>{wine.current_stock < 0 ? "Divergência" : wine.current_stock <= 2 ? "Baixo" : "Disponível"}</span></td><td>{wine.history_notes ? <details><summary>Ver</summary><p>{wine.history_notes}</p></details> : "-"}</td></tr>) : <tr><td colSpan={7}><div className="empty-state"><strong>Nenhum vinho cadastrado</strong><span>Use a importação inicial acima para carregar a relação.</span></div></td></tr>}</tbody></table></div></section>

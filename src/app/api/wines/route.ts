@@ -34,6 +34,21 @@ async function userId(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const session = await userId(request);
   if (!session) return NextResponse.json({ error: "Sessão expirada. Entre novamente." }, { status: 401 });
+  if (request.headers.get("content-type")?.includes("application/json")) {
+    const { action, wineId, kind, quantity, note } = await request.json();
+    const headersAuth = { apikey: key, Authorization: `Bearer ${session.token}`, "Content-Type": "application/json" };
+    const rpc = action === "note" ? "append_wine_note" : action === "movement" ? "record_wine_movement" : null;
+    if (!rpc || !wineId) return NextResponse.json({ error: "Solicitação inválida." }, { status: 400 });
+    const body = action === "note"
+      ? { p_wine_id: wineId, p_note: note }
+      : { p_wine_id: wineId, p_kind: kind, p_quantity: Number(quantity), p_note: note };
+    const response = await fetch(`${url}/rest/v1/rpc/${rpc}`, { method: "POST", headers: headersAuth, body: JSON.stringify(body) });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      return NextResponse.json({ error: error.message || "Não foi possível registrar a operação." }, { status: 400 });
+    }
+    return NextResponse.json({ ok: true, message: action === "note" ? "Observação adicionada." : "Movimentação registrada." });
+  }
   const data = await request.formData(); const file = data.get("file");
   if (!(file instanceof File) || !file.name.toLowerCase().endsWith(".csv")) return NextResponse.json({ error: "Selecione um arquivo CSV." }, { status: 400 });
   const rows = csvRows(await file.text()); const headers = rows.shift();

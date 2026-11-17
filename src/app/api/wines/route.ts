@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   for (const row of rows) {
     const name = row[nameAt!]?.trim(); if (!name) continue;
     const initialQuantity = integer(row[quantityAt!] || ""); const quantityOut = integer(row[outAt!] || ""); const currentStock = integer(row[stockAt!] || ""); const unitValue = money(row[valueAt!] || "");
-    if ([initialQuantity, quantityOut, currentStock, unitValue].some((value) => typeof value === "number" && !Number.isFinite(value)) || initialQuantity < 0 || quantityOut < 0 || currentStock < 0 || initialQuantity - quantityOut !== currentStock) return NextResponse.json({ error: `Há dados inválidos em “${name}”. Corrija o CSV e tente novamente.` }, { status: 400 });
+    if ([initialQuantity, quantityOut, currentStock, unitValue].some((value) => typeof value === "number" && !Number.isFinite(value)) || initialQuantity < 0 || quantityOut < 0 || initialQuantity - quantityOut !== currentStock) return NextResponse.json({ error: `Há dados inválidos em “${name}”. Corrija o CSV e tente novamente.` }, { status: 400 });
     wines.push({ name, unitValue, initialQuantity, quantityOut, currentStock, historyNotes: row[notesAt!]?.trim() || null });
   }
   if (!wines.length) return NextResponse.json({ error: "Nenhum vinho válido foi encontrado." }, { status: 400 });

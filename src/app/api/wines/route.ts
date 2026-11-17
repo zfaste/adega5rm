@@ -53,7 +53,12 @@ export async function POST(request: NextRequest) {
   if (data.get("action") === "create") {
     const name = String(data.get("name") || "").trim();
     const toNumber = (value: FormDataEntryValue | null) => { const raw = String(value || "").trim(); if (!raw) return null; const parsed = Number(raw.replace(",", ".")); return Number.isFinite(parsed) ? parsed : null; };
-    const toInteger = (value: FormDataEntryValue | null) => { const parsed = Number.parseInt(String(value || "0"), 10); return Number.isFinite(parsed) ? parsed : null; };
+    const toInteger = (value: FormDataEntryValue | null) => {
+      const raw = String(value || "").trim();
+      if (!raw) return null;
+      const parsed = Number.parseInt(raw, 10);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
     const quantity = toInteger(data.get("quantity")); const minimumStock = toInteger(data.get("minimumStock"));
     if (!name || quantity === null || quantity < 0 || minimumStock === null || minimumStock < 0) return NextResponse.json({ error: "Informe nome, quantidade inicial e estoque mínimo válidos." }, { status: 400 });
     const photo = data.get("photo"); let imagePath: string | null = null;

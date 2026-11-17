@@ -49,14 +49,31 @@ export async function POST(request: NextRequest) {
     wines.push({ name, unitValue, initialQuantity, quantityOut, currentStock, historyNotes: row[notesAt!]?.trim() || null });
   }
   if (!wines.length) return NextResponse.json({ error: "Nenhum vinho válido foi encontrado." }, { status: 400 });
+  const grouped = new Map<string, WineRow>();
+  for (const wine of wines) {
+    const identity = normalize(wine.name);
+    const current = grouped.get(identity);
+    if (!current) { grouped.set(identity, wine); continue; }
+    const notes = [current.historyNotes, wine.historyNotes].filter(Boolean).join("\n");
+    const differentValue = current.unitValue !== wine.unitValue;
+    grouped.set(identity, {
+      name: current.name,
+      unitValue: differentValue ? null : current.unitValue,
+      initialQuantity: current.initialQuantity + wine.initialQuantity,
+      quantityOut: current.quantityOut + wine.quantityOut,
+      currentStock: current.currentStock + wine.currentStock,
+      historyNotes: `${differentValue ? "Valores de importação divergentes; valor unitário não definido.\n" : ""}${notes}`.trim() || null,
+    });
+  }
+  const consolidatedWines = [...grouped.values()];
   const headersAuth = { apikey: key, Authorization: `Bearer ${session.token}`, "Content-Type": "application/json", Prefer: "return=representation" };
   const existing = await fetch(`${url}/rest/v1/wines?select=id&limit=1`, { headers: headersAuth });
   if ((await existing.json()).length) return NextResponse.json({ error: "Já existe estoque cadastrado. A importação inicial só pode ser feita uma vez." }, { status: 409 });
-  const totals = wines.reduce((result, wine) => ({ initial: result.initial + wine.initialQuantity, out: result.out + wine.quantityOut, stock: result.stock + wine.currentStock }), { initial: 0, out: 0, stock: 0 });
-  const importResponse = await fetch(`${url}/rest/v1/wine_imports`, { method: "POST", headers: headersAuth, body: JSON.stringify({ user_id: session.id, source_file_name: file.name, records_count: wines.length, initial_quantity: totals.initial, quantity_out: totals.out, current_stock: totals.stock }) });
+  const totals = consolidatedWines.reduce((result, wine) => ({ initial: result.initial + wine.initialQuantity, out: result.out + wine.quantityOut, stock: result.stock + wine.currentStock }), { initial: 0, out: 0, stock: 0 });
+  const importResponse = await fetch(`${url}/rest/v1/wine_imports`, { method: "POST", headers: headersAuth, body: JSON.stringify({ user_id: session.id, source_file_name: file.name, records_count: consolidatedWines.length, initial_quantity: totals.initial, quantity_out: totals.out, current_stock: totals.stock }) });
   if (!importResponse.ok) return NextResponse.json({ error: "Não foi possível registrar a importação." }, { status: 500 });
   const [batch] = await importResponse.json();
-  const wineResponse = await fetch(`${url}/rest/v1/wines`, { method: "POST", headers: headersAuth, body: JSON.stringify(wines.map((wine) => ({ user_id: session.id, import_id: batch.id, name: wine.name, unit_value: wine.unitValue, initial_quantity: wine.initialQuantity, quantity_out: wine.quantityOut, current_stock: wine.currentStock, history_notes: wine.historyNotes }))) });
-  if (!wineResponse.ok) return NextResponse.json({ error: "A importação não foi concluída. Tente novamente." }, { status: 500 });
-  return NextResponse.json({ ok: true, records: wines.length, stock: totals.stock });
+  const wineResponse = await fetch(`${url}/rest/v1/wines`, { method: "POST", headers: headersAuth, body: JSON.stringify(consolidatedWines.map((wine) => ({ user_id: session.id, import_id: batch.id, name: wine.name, unit_value: wine.unitValue, initial_quantity: wine.initialQuantity, quantity_out: wine.quantityOut, current_stock: wine.currentStock, history_notes: wine.historyNotes }))) });
+  if (!wineResponse.ok) { console.error("Wine import failed", wineResponse.status, await wineResponse.text()); return NextResponse.json({ error: "A importação não foi concluída. Tente novamente." }, { status: 500 }); }
+  return NextResponse.json({ ok: true, records: consolidatedWines.length, stock: totals.stock });
 }

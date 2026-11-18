@@ -5,6 +5,28 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 type SearchResult = { id: string; name: string; winery?: string | null; vintage?: number | null; grape?: string | null; type?: string | null; country?: string | null; volumeMl?: number | null; price?: number | null; priceLabel?: string | null; imageUrl?: string | null; provider: string; sourceUrl?: string | null; license?: string | null };
 const blank = { name: "", winery: "", vintage: "", grape: "", type: "", country: "", volumeMl: "750", referencePrice: "", acquisitionValue: "", quantity: "0", location: "", minimumStock: "0", notes: "", imageUrl: "", imageSource: "", imageLicense: "", sourceProvider: "Manual", sourceUrl: "" };
 
+const normalizeBottle = async (source: Blob) => new Promise<Blob>((resolve) => {
+  const image = new Image(); const imageUrl = URL.createObjectURL(source);
+  image.onload = () => {
+    const sourceCanvas = document.createElement("canvas"); sourceCanvas.width = image.naturalWidth; sourceCanvas.height = image.naturalHeight;
+    const sourceContext = sourceCanvas.getContext("2d", { willReadFrequently: true });
+    if (!sourceContext) { URL.revokeObjectURL(imageUrl); resolve(source); return; }
+    sourceContext.drawImage(image, 0, 0); const pixels = sourceContext.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height).data;
+    let left = sourceCanvas.width; let top = sourceCanvas.height; let right = -1; let bottom = -1;
+    for (let y = 0; y < sourceCanvas.height; y += 1) for (let x = 0; x < sourceCanvas.width; x += 1) { if (pixels[(y * sourceCanvas.width + x) * 4 + 3] > 32) { left = Math.min(left, x); top = Math.min(top, y); right = Math.max(right, x); bottom = Math.max(bottom, y); } }
+    if (right < left || bottom < top) { URL.revokeObjectURL(imageUrl); resolve(source); return; }
+    let cropWidth = (right - left + 1) * 1.18; let cropHeight = (bottom - top + 1) * 1.08; const targetRatio = 3 / 5;
+    if (cropWidth / cropHeight < targetRatio) cropWidth = cropHeight * targetRatio; else cropHeight = cropWidth / targetRatio;
+    cropWidth = Math.min(cropWidth, sourceCanvas.width); cropHeight = Math.min(cropHeight, sourceCanvas.height);
+    const centerX = (left + right) / 2; const centerY = (top + bottom) / 2;
+    const cropX = Math.max(0, Math.min(sourceCanvas.width - cropWidth, centerX - cropWidth / 2)); const cropY = Math.max(0, Math.min(sourceCanvas.height - cropHeight, centerY - cropHeight / 2));
+    const output = document.createElement("canvas"); output.width = 900; output.height = 1500;
+    output.getContext("2d")?.drawImage(sourceCanvas, cropX, cropY, cropWidth, cropHeight, 0, 0, output.width, output.height);
+    output.toBlob((blob) => { URL.revokeObjectURL(imageUrl); resolve(blob || source); }, "image/png");
+  };
+  image.onerror = () => { URL.revokeObjectURL(imageUrl); resolve(source); }; image.src = imageUrl;
+});
+
 export function WineCatalog() {
   const [open, setOpen] = useState(false); const [query, setQuery] = useState(""); const [results, setResults] = useState<SearchResult[]>([]); const [form, setForm] = useState(blank); const [photo, setPhoto] = useState<File | null>(null); const [preview, setPreview] = useState(""); const [message, setMessage] = useState(""); const [searching, setSearching] = useState(false); const [saving, setSaving] = useState(false); const [cameraOpen, setCameraOpen] = useState(false); const [cameraMessage, setCameraMessage] = useState(""); const [processingPhoto, setProcessingPhoto] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null); const streamRef = useRef<MediaStream | null>(null);
@@ -26,8 +48,8 @@ export function WineCatalog() {
     try {
       const { removeBackground: cutout } = await import("@imgly/background-removal");
       const result = await cutout(source, { model: "isnet_quint8", output: { format: "image/png", quality: 1 }, progress: () => setCameraMessage("Removendo o fundo — isto pode levar alguns instantes na primeira foto.") });
-      const file = new File([result], "garrafa-sem-fundo.png", { type: "image/png" });
-      setPhoto(file); setPreview(URL.createObjectURL(result)); set("imageUrl", ""); setCameraMessage("Foto pronta: a garrafa foi isolada com fundo transparente.");
+      const normalized = await normalizeBottle(result); const file = new File([normalized], "garrafa-sem-fundo.png", { type: "image/png" });
+      setPhoto(file); setPreview(URL.createObjectURL(normalized)); set("imageUrl", ""); setCameraMessage("Foto pronta: a garrafa foi centralizada e isolada com fundo transparente.");
     } catch {
       const fallback = new File([source], "garrafa-original.jpg", { type: source.type || "image/jpeg" });
       setPhoto(fallback); setPreview(URL.createObjectURL(source)); set("imageUrl", ""); setCameraMessage("Não foi possível remover o fundo nesta tentativa. A foto original foi mantida para você não perder o registro.");
@@ -38,15 +60,14 @@ export function WineCatalog() {
     setCameraMessage("");
     if (!navigator.mediaDevices?.getUserMedia) return setCameraMessage("A câmera não é suportada neste navegador. Use o envio da galeria.");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1080 }, height: { ideal: 1920 } }, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" }, aspectRatio: { ideal: 9 / 16 }, width: { ideal: 1080 }, height: { ideal: 1920 } }, audio: false });
       streamRef.current = stream; setCameraOpen(true);
     } catch { setCameraMessage("Não conseguimos acessar a câmera. Confira a permissão do navegador ou envie uma foto da galeria."); }
   };
   const captureBottle = async () => {
     const video = videoRef.current; if (!video?.videoWidth || !video.videoHeight) return;
-    const canvas = document.createElement("canvas"); canvas.width = 900; canvas.height = 1500;
-    const sourceWidth = video.videoWidth * 0.52; const sourceHeight = video.videoHeight * 0.92; const sourceX = (video.videoWidth - sourceWidth) / 2; const sourceY = Math.max(0, (video.videoHeight - sourceHeight) / 2);
-    canvas.getContext("2d")?.drawImage(video, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+    const canvas = document.createElement("canvas"); canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
     const captured = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.94));
     stopCamera(); if (captured) await removeBackground(captured);
   };

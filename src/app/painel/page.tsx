@@ -12,15 +12,15 @@ type Wine = CollectionWine & { unit_value: number | null; initial_quantity: numb
 export default async function Painel() {
   const cookieStore = await cookies(); const token = cookieStore.get("adega_access_token")?.value;
   if (!token) redirect("/");
-  const response = await fetch(`${url}/rest/v1/wines?select=id,name,winery,vintage,country,wine_type,volume_ml,reference_price,unit_value,initial_quantity,quantity_out,current_stock,history_notes,image_url,image_path&order=name.asc`, { headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: "no-store" });
+  const response = await fetch(`${url}/rest/v1/wines?select=id,name,winery,vintage,country,wine_type,volume_ml,reference_price,unit_value,location,initial_quantity,quantity_out,current_stock,history_notes,image_url,image_path&order=name.asc`, { headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: "no-store" });
   const wines: Wine[] = response.ok ? await response.json() : [];
   const totals = wines.reduce((result, wine) => ({ stock: result.stock + wine.current_stock, low: result.low + (wine.current_stock > 0 && wine.current_stock <= 2 ? 1 : 0) }), { stock: 0, low: 0 });
   const summary = [{ label: "Vinhos cadastrados", value: wines.length, detail: "rótulos no acervo" }, { label: "Garrafas em estoque", value: totals.stock, detail: "unidades disponíveis" }, { label: "Estoque baixo", value: totals.low, detail: "itens para verificar" }];
 
   return <main className="dashboard-page">
-    <aside className="dashboard-sidebar"><div className="sidebar-brand"><img src="/brand/gabinete-5rm-bordo.png" alt="Símbolo da 5ª Região Militar" /><div><strong>Adega 5ª RM</strong><span>Controle de vinhos</span></div></div><nav aria-label="Navegação principal"><a className="active" href="/painel"><span aria-hidden="true">▦</span> Painel</a><a href="#relacao"><span aria-hidden="true">▤</span> Acervo visual</a></nav><p className="sidebar-note">GESTÃO INSTITUCIONAL<br />ACESSO RESTRITO</p></aside>
+    <aside className="dashboard-sidebar"><div className="sidebar-brand"><img src="/brand/gabinete-5rm-bordo.png" alt="Símbolo da 5ª Região Militar" /><div><strong>Adega 5ª RM</strong><span>Controle de vinhos</span></div></div><nav aria-label="Navegação principal"><a className="active" href="/painel"><svg className="sidebar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg> Painel</a><a href="#relacao"><svg className="sidebar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></svg> Acervo visual</a></nav><p className="sidebar-note">GESTÃO INSTITUCIONAL<br />ACESSO RESTRITO</p></aside>
     <section className="dashboard-content">
-      <header className="dashboard-header"><div><p>VISÃO GERAL</p><h1>Painel da Adega</h1></div><div className="status"><i /> Sistema ativo</div></header>
+      <header className="dashboard-header"><div><p>VISÃO GERAL</p><h1>Painel da Adega</h1></div></header>
       <section className="summary-grid" aria-label="Resumo do estoque">{summary.map((item) => <article className="summary-card" key={item.label}><p>{item.label}</p><strong>{item.value}</strong><span>{item.detail}</span></article>)}</section>
       <WineCatalog />
       {!wines.length && <section className="import-box"><div><p>IMPORTAÇÃO INICIAL</p><h2>Carregue seu estoque atual</h2><span>Use o CSV exportado da planilha. O sistema valida os totais antes de gravar os dados.</span></div><WineImporter /></section>}

@@ -53,3 +53,8 @@ body:has(.dashboard-page) { overflow: hidden; }
   .collection-panel { padding: 20px; }.collection-top { align-items: stretch; flex-direction: column; }.collection-controls { align-items: stretch; flex-direction: column; }.collection-controls input { width: 100%; }.collection-layout { grid-template-columns: 1fr; }.wine-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }.wine-card-image { height: 190px; }.wine-card-info { padding: 12px; }.wine-card-info h3 { font-size: 14px; }.wine-card-info > div { align-items: start; flex-direction: column; }.wine-card-info button { width: 100%; }.issue-cart { position: static; }
   .quick-action { grid-template-columns: 1fr; align-items: stretch; }.quick-action button { width: 100%; }
 }
+
+
+.dashboard-header { justify-content: flex-start; }
+.sidebar-icon { width: 18px; height: 18px; flex: 0 0 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.wine-location { color: #7e1d3a !important; font-weight: 600; }

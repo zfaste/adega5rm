@@ -35,19 +35,24 @@ export async function POST(request: NextRequest) {
   const session = await userId(request);
   if (!session) return NextResponse.json({ error: "Sessão expirada. Entre novamente." }, { status: 401 });
   if (request.headers.get("content-type")?.includes("application/json")) {
-    const { action, wineId, kind, quantity, note } = await request.json();
+    const payload = await request.json() as { action?: string; wineId?: string; kind?: string; quantity?: unknown; note?: string; guideReference?: string; items?: unknown };
+    const { action, wineId, kind, quantity, note, guideReference } = payload;
+    const items = Array.isArray(payload.items) ? payload.items as Array<{ wineId?: string; quantity?: unknown }> : [];
     const headersAuth = { apikey: key, Authorization: `Bearer ${session.token}`, "Content-Type": "application/json" };
-    const rpc = action === "note" ? "append_wine_note" : action === "movement" ? "record_wine_movement" : null;
-    if (!rpc || !wineId) return NextResponse.json({ error: "Solicitação inválida." }, { status: 400 });
+    const rpc = action === "note" ? "append_wine_note" : action === "movement" ? "record_wine_movement" : action === "issue_batch" ? "record_wine_issue_batch" : null;
+    if (!rpc || (action !== "issue_batch" && !wineId)) return NextResponse.json({ error: "Solicitação inválida." }, { status: 400 });
+    if (action === "issue_batch" && (!items.length || !guideReference?.trim() || items.some((item) => !item.wineId || !Number.isInteger(Number(item.quantity)) || Number(item.quantity) <= 0))) return NextResponse.json({ error: "Informe a guia e ao menos uma garrafa válida para a saída." }, { status: 400 });
     const body = action === "note"
       ? { p_wine_id: wineId, p_note: note }
-      : { p_wine_id: wineId, p_kind: kind, p_quantity: Number(quantity), p_note: note };
+      : action === "issue_batch"
+        ? { p_items: items.map((item) => ({ wine_id: item.wineId, quantity: Number(item.quantity) })), p_guide_reference: guideReference, p_note: note }
+        : { p_wine_id: wineId, p_kind: kind, p_quantity: Number(quantity), p_note: note, p_guide_reference: guideReference || null };
     const response = await fetch(`${url}/rest/v1/rpc/${rpc}`, { method: "POST", headers: headersAuth, body: JSON.stringify(body) });
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       return NextResponse.json({ error: error.message || "Não foi possível registrar a operação." }, { status: 400 });
     }
-    return NextResponse.json({ ok: true, message: action === "note" ? "Observação adicionada." : "Movimentação registrada." });
+    return NextResponse.json({ ok: true, message: action === "note" ? "Observação adicionada." : action === "issue_batch" ? "Saída registrada na guia informada." : "Movimentação registrada." });
   }
   const data = await request.formData();
   if (data.get("action") === "create") {

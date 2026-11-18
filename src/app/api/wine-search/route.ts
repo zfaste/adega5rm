@@ -28,7 +28,11 @@ function isSingleBottle(title: unknown, query: string) {
   const name = normalized(typeof title === "string" ? title : "");
   const terms = normalized(query).match(/[a-z0-9]+/g)?.filter((term) => term.length >= 3) || [];
   const packageTerms = /\b(kit|box|caixa|combo|pack|conjunto|colec(?:ao|ao)|duo|trio|bundle|cesta|assinatura|garrafas?|unidades?|\d+\s*(?:un|und|unid|x))\b/i;
-  return Boolean(name) && !packageTerms.test(name) && terms.every((term) => name.includes(term));
+  const nonWineTerms = /\b(livro|books?|biblioteca|quadrinhos|comic|kindle|revista|album|jogo|brinquedo|camiseta|curso)\b/i;
+  const wineMarker = /\b(vinho|wine|vin|malbec|cabernet|merlot|chardonnay|syrah|pinot|sauvignon|tempranillo|tannat|750\s*ml|375\s*ml|1\s*l)\b/i;
+  const matchedTerms = terms.filter((term) => name.includes(term)).length;
+  const requiredMatches = terms.length <= 2 ? terms.length : Math.ceil(terms.length * .7);
+  return Boolean(name) && !packageTerms.test(name) && !nonWineTerms.test(name) && wineMarker.test(name) && matchedTerms >= requiredMatches;
 }
 
 export async function GET(request: NextRequest) {
@@ -51,7 +55,7 @@ export async function GET(request: NextRequest) {
   const serpKey = process.env.SERPAPI_API_KEY;
   if (serpKey && results.length < 6) {
     try {
-      const search = new URL("https://serpapi.com/search.json"); search.searchParams.set("engine", "google_shopping"); search.searchParams.set("q", query); search.searchParams.set("gl", "br"); search.searchParams.set("hl", "pt-br"); search.searchParams.set("location", "Brazil"); search.searchParams.set("api_key", serpKey);
+      const search = new URL("https://serpapi.com/search.json"); search.searchParams.set("engine", "google_shopping"); search.searchParams.set("q", `vinho ${query} garrafa`); search.searchParams.set("gl", "br"); search.searchParams.set("hl", "pt-br"); search.searchParams.set("location", "Brazil"); search.searchParams.set("api_key", serpKey);
       const response = await fetch(search, { cache: "no-store" }); const data = response.ok ? await response.json() : { shopping_results: [] };
       for (const item of (data.shopping_results || []).filter((item: { title?: string }) => isSingleBottle(item.title, query)).slice(0, 6 - results.length)) {
         const price = brazilianPrice(item.price);

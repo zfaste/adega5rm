@@ -11,6 +11,16 @@ export function WineCatalog() {
   const set = (key: keyof typeof blank, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const stopCamera = () => { streamRef.current?.getTracks().forEach((track) => track.stop()); streamRef.current = null; setCameraOpen(false); };
   useEffect(() => () => { streamRef.current?.getTracks().forEach((track) => track.stop()); }, []);
+  useEffect(() => {
+    const video = videoRef.current; const stream = streamRef.current;
+    if (!cameraOpen || !video || !stream) return;
+    video.srcObject = stream;
+    const play = async () => { try { await video.play(); setCameraMessage(""); } catch { setCameraMessage("A câmera foi autorizada, mas não iniciou. Toque em Fechar e tente novamente."); } };
+    video.onloadedmetadata = () => { void play(); };
+    video.oncanplay = () => { void play(); };
+    if (video.readyState >= 2) void play();
+    return () => { video.onloadedmetadata = null; video.oncanplay = null; video.srcObject = null; };
+  }, [cameraOpen]);
   const removeBackground = async (source: Blob) => {
     setProcessingPhoto(true); setCameraMessage("Preparando a garrafa e removendo o fundo...");
     try {
@@ -30,7 +40,6 @@ export function WineCatalog() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1080 }, height: { ideal: 1920 } }, audio: false });
       streamRef.current = stream; setCameraOpen(true);
-      window.setTimeout(() => { if (videoRef.current) { videoRef.current.srcObject = stream; void videoRef.current.play(); } }, 0);
     } catch { setCameraMessage("Não conseguimos acessar a câmera. Confira a permissão do navegador ou envie uma foto da galeria."); }
   };
   const captureBottle = async () => {

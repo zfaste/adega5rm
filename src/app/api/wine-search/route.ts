@@ -20,6 +20,17 @@ function brazilianPrice(value: unknown) {
   return Number.isFinite(parsed) && parsed > 0 ? { value: parsed, label } : null;
 }
 
+function normalized(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function isSingleBottle(title: unknown, query: string) {
+  const name = normalized(typeof title === "string" ? title : "");
+  const terms = normalized(query).match(/[a-z0-9]+/g)?.filter((term) => term.length >= 3) || [];
+  const packageTerms = /\b(kit|box|caixa|combo|pack|conjunto|colec(?:ao|ao)|duo|trio|bundle|cesta|assinatura|garrafas?|unidades?|\d+\s*(?:un|und|unid|x))\b/i;
+  return Boolean(name) && !packageTerms.test(name) && terms.every((term) => name.includes(term));
+}
+
 export async function GET(request: NextRequest) {
   if (!await signedIn(request)) return NextResponse.json({ error: "Sessão expirada." }, { status: 401 });
   const query = request.nextUrl.searchParams.get("q")?.trim() || "";
@@ -32,7 +43,7 @@ export async function GET(request: NextRequest) {
     if (response.ok) {
       const data = await response.json();
       for (const product of data.products || []) {
-        if (!product.product_name) continue;
+        if (!product.product_name || !isSingleBottle(product.product_name, query)) continue;
         results.push({ id: `off-${product.code}`, name: product.product_name, winery: product.brands || null, volumeMl: volume(product.quantity), country: product.origins || null, type: null, grape: null, vintage: null, price: null, imageUrl: product.image_front_small_url || product.image_url || null, provider: "Open Food Facts", sourceUrl: product.url || `https://world.openfoodfacts.org/product/${product.code}`, license: "Open Food Facts Database License (ODbL)" });
       }
     }
@@ -42,7 +53,7 @@ export async function GET(request: NextRequest) {
     try {
       const search = new URL("https://serpapi.com/search.json"); search.searchParams.set("engine", "google_shopping"); search.searchParams.set("q", query); search.searchParams.set("gl", "br"); search.searchParams.set("hl", "pt-br"); search.searchParams.set("location", "Brazil"); search.searchParams.set("api_key", serpKey);
       const response = await fetch(search, { cache: "no-store" }); const data = response.ok ? await response.json() : { shopping_results: [] };
-      for (const item of (data.shopping_results || []).slice(0, 6 - results.length)) {
+      for (const item of (data.shopping_results || []).filter((item: { title?: string }) => isSingleBottle(item.title, query)).slice(0, 6 - results.length)) {
         const price = brazilianPrice(item.price);
         results.push({ id: `serp-${item.position}-${item.title}`, name: item.title, winery: item.source || null, volumeMl: null, country: null, type: null, grape: null, vintage: null, price: price?.value || null, priceLabel: price?.label || null, imageUrl: item.thumbnail || null, provider: "SerpApi / Google Shopping", sourceUrl: item.link || item.product_link || null, license: "Imagem não é copiada automaticamente; consulte a fonte." });
       }

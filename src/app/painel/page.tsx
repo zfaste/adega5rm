@@ -25,8 +25,8 @@ export default async function Painel() {
     `${url}/rest/v1/wine_movements?select=id,wine_id,kind,quantity,note,guide_reference,occurred_at&order=occurred_at.desc`,
     { headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: "no-store" },
   );
-  const wineNames = new Map(wines.map((wine) => [wine.id, wine.name]));
-  const movements: Movement[] = movementResponse.ok ? (await movementResponse.json()).map((movement: { id: string; wine_id: string; kind: "entrada" | "saida"; quantity: number; note: string | null; guide_reference: string | null; occurred_at: string }) => ({ id: movement.id, wineName: wineNames.get(movement.wine_id) || "Garrafa removida", kind: movement.kind, quantity: movement.quantity, note: movement.note, guideReference: movement.guide_reference, occurredAt: movement.occurred_at })) : [];
+  const wineDetails = new Map(wines.map((wine) => [wine.id, { name: wine.name, image: wine.image_path ? `/api/wine-image?path=${encodeURIComponent(wine.image_path)}` : wine.image_url }]));
+  const movements: Movement[] = movementResponse.ok ? (await movementResponse.json()).map((movement: { id: string; wine_id: string; kind: "entrada" | "saida"; quantity: number; note: string | null; guide_reference: string | null; occurred_at: string }) => ({ id: movement.id, wineName: wineDetails.get(movement.wine_id)?.name || "Garrafa removida", wineImage: wineDetails.get(movement.wine_id)?.image || null, kind: movement.kind, quantity: movement.quantity, note: movement.note, guideReference: movement.guide_reference, occurredAt: movement.occurred_at })) : [];
   const totals = wines.reduce((result, wine) => ({
     stock: result.stock + wine.current_stock,
     low: result.low + (wine.current_stock > 0 && wine.current_stock <= 2 ? 1 : 0),

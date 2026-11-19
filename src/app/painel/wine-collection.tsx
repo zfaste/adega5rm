@@ -29,7 +29,7 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({});
   const [cartOpen, setCartOpen] = useState(false);
-  const [guideReference, setGuideReference] = useState("");
+  const [destination, setDestination] = useState("");
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
@@ -71,12 +71,12 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
 
   const issue = async () => {
     setMessage("");
-    if (!guideReference.trim()) return setMessage("Informe o número da guia ou da saída.");
+    if (!destination.trim()) return setMessage("Informe o destino desta saída.");
     if (!cartDetails.length) return setMessage("Adicione ao menos uma garrafa à saída.");
     setSaving(true);
     const response = await fetch("/api/wines", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "issue_batch", guideReference, note, items: cartDetails.map((item) => ({ wineId: item.wineId, quantity: item.quantity })) }),
+      body: JSON.stringify({ action: "issue_batch", guideReference: destination, note, items: cartDetails.map((item) => ({ wineId: item.wineId, quantity: item.quantity })) }),
     });
     const data = await response.json(); setSaving(false);
     if (!response.ok) return setMessage(data.error || "Não foi possível registrar a saída.");
@@ -129,12 +129,12 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
       {modal && <button className="modal-close" type="button" onClick={() => setCartOpen(false)}>Continuar adicionando</button>}
     </div>
     {modal && <span className="cart-prompt">Revise os rótulos e escolha se deseja finalizar esta saída ou adicionar mais garrafas.</span>}
+    <label className="destination-field">Destino *<input value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="Ex.: Jantar da 5ª DE" /></label>
     {cartDetails.length ? <div className="cart-items">{cartDetails.map((item) => <div key={item.wineId}>
-      <span>{item.wine.name}</span><label>Qtd.<input type="number" inputMode="numeric" min="1" max={Math.max(1, item.wine.current_stock)} value={quantityDrafts[item.wineId] ?? String(item.quantity)} onChange={(event) => setQuantityDrafts((current) => ({ ...current, [item.wineId]: event.target.value }))} onBlur={(event) => commitQuantity(item.wineId, event.target.value)} /></label>
+      <span>{item.wine.name}<small>Disponível: {item.wine.current_stock} garrafas</small></span><label>Qtd.<input type="number" inputMode="numeric" min="1" max={Math.max(1, item.wine.current_stock)} value={quantityDrafts[item.wineId] ?? String(item.quantity)} onChange={(event) => setQuantityDrafts((current) => ({ ...current, [item.wineId]: event.target.value }))} onBlur={(event) => commitQuantity(item.wineId, event.target.value)} /></label>
       <button type="button" onClick={() => removeFromCart(item.wineId)}>Remover</button>
     </div>)}</div> : <span>Adicione garrafas pelos cards.</span>}
-    <label>Guia / saída nº<input value={guideReference} onChange={(event) => setGuideReference(event.target.value)} placeholder="Ex.: Guia 042/2026" /></label>
-    <label>Destino ou observação<textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Opcional" /></label>
+    <label>Observação<textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Opcional" /></label>
     <button className="issue-button" type="button" disabled={!cartDetails.length || saving} onClick={issue}>{saving ? "Registrando..." : "Finalizar saída"}</button>
     {modal && <button className="continue-button" type="button" onClick={() => setCartOpen(false)}>Adicionar mais vinhos</button>}
     {message && <small className="issue-message">{message}</small>}

@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
     const rpc = action === "note" ? "append_wine_note" : action === "movement" ? "record_wine_movement" : action === "issue_batch" ? "record_wine_issue_batch" : null;
     if (!rpc || (action !== "issue_batch" && !wineId)) return NextResponse.json({ error: "Solicitação inválida." }, { status: 400 });
-    if (action === "issue_batch" && (!items.length || !guideReference?.trim() || items.some((item) => !item.wineId || !Number.isInteger(Number(item.quantity)) || Number(item.quantity) <= 0))) return NextResponse.json({ error: "Informe a guia e ao menos uma garrafa válida para a saída." }, { status: 400 });
+    if (action === "issue_batch" && (!items.length || !guideReference?.trim() || items.some((item) => !item.wineId || !Number.isInteger(Number(item.quantity)) || Number(item.quantity) <= 0))) return NextResponse.json({ error: "Informe o destino e ao menos uma garrafa válida para a saída." }, { status: 400 });
     const body = action === "note"
       ? { p_wine_id: wineId, p_note: note }
       : action === "issue_batch"
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       const error = await response.json().catch(() => ({}));
       return NextResponse.json({ error: error.message || "Não foi possível registrar a operação." }, { status: 400 });
     }
-    return NextResponse.json({ ok: true, message: action === "note" ? "Observação adicionada." : action === "issue_batch" ? "Saída registrada na guia informada." : "Movimentação registrada." });
+    return NextResponse.json({ ok: true, message: action === "note" ? "Observação adicionada." : action === "issue_batch" ? "Saída registrada no destino informado." : "Movimentação registrada." });
   }
   const data = await request.formData();
   if (data.get("action") === "create") {

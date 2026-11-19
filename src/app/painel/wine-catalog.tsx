@@ -78,7 +78,7 @@ export function WineCatalog({ initialOpen = false }: { initialOpen?: boolean }) 
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false });
       const track = stream.getVideoTracks()[0];
       const capabilities = track?.getCapabilities?.() as MediaTrackCapabilities & { zoom?: { min?: number } };
-      if (track && capabilities.zoom?.min !== undefined) await track.applyConstraints({ advanced: [{ zoom: capabilities.zoom.min }] } as unknown as MediaTrackConstraints);
+      if (track && capabilities.zoom?.min !== undefined) { try { await track.applyConstraints({ advanced: [{ zoom: capabilities.zoom.min }] } as unknown as MediaTrackConstraints); } catch { /* the stream still works on browsers that reject zoom constraints */ } }
       streamRef.current = stream; setCameraOpen(true);
     } catch { setCameraMessage("Não conseguimos acessar a câmera. Confira a permissão do navegador ou envie uma foto da galeria."); }
   };

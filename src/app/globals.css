@@ -64,3 +64,12 @@ body:has(.dashboard-page) { overflow: hidden; }
 @media (max-width: 760px) { .camera-footer { align-items: stretch; flex-direction: column; }.capture-button { width: 100%; }.photo-actions { width: 100%; }.camera-button,.file-button { flex: 1; } }
 @media (max-width: 760px) { .dashboard-content > * { min-width: 0; max-width: 100%; }.catalog-panel,.collection-panel,.wine-list,.table-wrap { min-width: 0; max-width: 100%; }.catalog-header > div,.collection-top > div { min-width: 0; }.catalog-header span,.collection-top span,.photo-field p { overflow-wrap: anywhere; } }
 @media (max-width: 760px) { .wine-grid { grid-template-columns: minmax(0, 1fr); }.wine-card-image { height: 250px; }.wine-card-info > div:not(.card-tools) { align-items: stretch; flex-direction: column; }.wine-card-info > div:not(.card-tools) button { width: 100%; }.card-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch !important; }.card-tools button { width: auto !important; min-width: 0; overflow-wrap: anywhere; } }
+
+.issue-cart-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.modal-close,.continue-button { border: 1px solid #dcc7cd; border-radius: 8px; color: #68172f; background: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.modal-close { padding: 8px 9px; }.continue-button { padding: 10px 11px; }
+.cart-prompt { color: #786c70; font-size: 13px; line-height: 1.4; }
+.issue-modal { position: fixed; z-index: 55; inset: 0; display: grid; align-items: end; padding: 16px; background: rgba(24, 10, 15, .55); }
+.issue-modal .issue-cart { position: static; width: min(100%, 520px); max-height: calc(100dvh - 32px); margin: 0 auto; overflow-y: auto; box-shadow: 0 -12px 38px rgba(28, 7, 15, .24); }
+.desktop-issue-cart { min-width: 0; }
+@media (max-width: 760px) { .desktop-issue-cart { display: none; }.issue-modal { padding: 12px; }.issue-modal .issue-cart { border-radius: 14px; } }

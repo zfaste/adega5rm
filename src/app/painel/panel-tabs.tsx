@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CollectionWine, WineCollection } from "./wine-collection";
 import { WineCatalog } from "./wine-catalog";
 import { WineImporter } from "./wine-importer";
@@ -23,8 +24,10 @@ const eyebrow = (tab: Tab) => tab === "dashboard" ? "VISÃO GERAL" : tab === "ac
 const heading = (tab: Tab) => tab === "dashboard" ? "Painel da Adega" : tab === "acervo" ? "Garrafas em adega" : tab === "cadastro" ? "Cadastrar garrafa" : "Relação de garrafas";
 
 export function PanelTabs({ wines, totalStock, lowStock, totalValue }: { wines: Wine[]; totalStock: number; lowStock: number; totalValue: number }) {
-  const [tab, setTab] = useState<Tab>("dashboard"); const [menuOpen, setMenuOpen] = useState(false);
-  const go = (next: Tab) => { setTab(next); setMenuOpen(false); };
+  const router = useRouter(); const searchParams = useSearchParams(); const [menuOpen, setMenuOpen] = useState(false);
+  const requestedTab = searchParams.get("tab");
+  const tab: Tab = navItems.some((item) => item.id === requestedTab) ? requestedTab as Tab : "dashboard";
+  const go = (next: Tab) => { router.replace(next === "dashboard" ? "/painel" : `/painel?tab=${next}`, { scroll: false }); setMenuOpen(false); };
   const summary = [{ label: "Garrafas cadastradas", value: wines.length, detail: "rótulos no acervo" }, { label: "Garrafas em estoque", value: totalStock, detail: "unidades disponíveis" }, { label: "Valor estimado em estoque", value: totalValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), detail: "pelo preço de referência" }, { label: "Estoque baixo", value: lowStock, detail: "itens para verificar" }];
 
   return <main className="dashboard-page">

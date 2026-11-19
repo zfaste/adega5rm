@@ -7,31 +7,32 @@ import { WineImporter } from "./wine-importer";
 
 type Wine = CollectionWine & { unit_value: number | null; initial_quantity: number; quantity_out: number; current_stock: number; history_notes: string | null };
 type Tab = "dashboard" | "acervo" | "cadastro" | "relacao";
+const navItems: Array<{ id: Tab; label: string }> = [{ id: "dashboard", label: "Painel" }, { id: "acervo", label: "Acervo visual" }, { id: "cadastro", label: "Cadastrar garrafa" }, { id: "relacao", label: "Relação de garrafas" }];
 
-const navItems: Array<{ id: Tab; label: string; icon: string }> = [
-  { id: "dashboard", label: "Painel", icon: "▦" },
-  { id: "acervo", label: "Acervo visual", icon: "▤" },
-  { id: "cadastro", label: "Cadastrar garrafa", icon: "+" },
-  { id: "relacao", label: "Relação de garrafas", icon: "☷" },
-];
+function Icon({ name }: { name: "menu" | "close" | "dashboard" | "archive" | "plus" | "list" }) {
+  const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (name === "menu") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M4 6h16M4 12h16M4 18h16" /></svg>;
+  if (name === "close") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="m6 6 12 12M18 6 6 18" /></svg>;
+  if (name === "dashboard") return <svg viewBox="0 0 24 24" aria-hidden="true"><rect {...common} x="3" y="3" width="7" height="7" rx="1" /><rect {...common} x="14" y="3" width="7" height="7" rx="1" /><rect {...common} x="3" y="14" width="7" height="7" rx="1" /><rect {...common} x="14" y="14" width="7" height="7" rx="1" /></svg>;
+  if (name === "archive") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M4 7h16v13H4zM3 4h18v3H3zM9 11h6" /></svg>;
+  if (name === "plus") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M12 5v14M5 12h14" /></svg>;
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M9 6h11M9 12h11M9 18h11" /><circle {...common} cx="4" cy="6" r="1" /><circle {...common} cx="4" cy="12" r="1" /><circle {...common} cx="4" cy="18" r="1" /></svg>;
+}
+const tabIcon = (tab: Tab) => tab === "dashboard" ? "dashboard" : tab === "acervo" ? "archive" : tab === "cadastro" ? "plus" : "list";
+const eyebrow = (tab: Tab) => tab === "dashboard" ? "VISÃO GERAL" : tab === "acervo" ? "ACERVO VISUAL" : tab === "cadastro" ? "CATÁLOGO INTELIGENTE" : "CONTROLE DE ESTOQUE";
+const heading = (tab: Tab) => tab === "dashboard" ? "Painel da Adega" : tab === "acervo" ? "Garrafas em adega" : tab === "cadastro" ? "Cadastrar garrafa" : "Relação de garrafas";
 
 export function PanelTabs({ wines, totalStock, lowStock, totalValue }: { wines: Wine[]; totalStock: number; lowStock: number; totalValue: number }) {
-  const [tab, setTab] = useState<Tab>("dashboard");
-  const summary = [
-    { label: "Garrafas cadastradas", value: wines.length, detail: "rótulos no acervo" },
-    { label: "Garrafas em estoque", value: totalStock, detail: "unidades disponíveis" },
-    { label: "Valor estimado em estoque", value: totalValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), detail: "pelo preço de referência" },
-    { label: "Estoque baixo", value: lowStock, detail: "itens para verificar" },
-  ];
+  const [tab, setTab] = useState<Tab>("dashboard"); const [menuOpen, setMenuOpen] = useState(false);
+  const go = (next: Tab) => { setTab(next); setMenuOpen(false); };
+  const summary = [{ label: "Garrafas cadastradas", value: wines.length, detail: "rótulos no acervo" }, { label: "Garrafas em estoque", value: totalStock, detail: "unidades disponíveis" }, { label: "Valor estimado em estoque", value: totalValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), detail: "pelo preço de referência" }, { label: "Estoque baixo", value: lowStock, detail: "itens para verificar" }];
 
   return <main className="dashboard-page">
-    <aside className="dashboard-sidebar">
-      <div className="sidebar-brand"><img src="/brand/gabinete-5rm-bordo.png" alt="Símbolo da 5ª Região Militar" /><div><strong>Adega 5ª RM</strong><span>Controle de garrafas</span></div></div>
-      <nav aria-label="Navegação principal">{navItems.map((item) => <button type="button" key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}><span aria-hidden="true">{item.icon}</span>{item.label}</button>)}</nav>
-      <p className="sidebar-note">GESTÃO INSTITUCIONAL<br />ACESSO RESTRITO</p>
-    </aside>
+    {menuOpen && <button className="drawer-backdrop" type="button" aria-label="Fechar menu" onClick={() => setMenuOpen(false)} />}
+    <aside className={`dashboard-sidebar${menuOpen ? " open" : ""}`}><div className="sidebar-brand"><img src="/brand/gabinete-5rm-bordo.png" alt="Símbolo da 5ª Região Militar" /><div><strong>Adega 5ª RM</strong><span>Controle de garrafas</span></div><button className="drawer-close" type="button" onClick={() => setMenuOpen(false)} aria-label="Fechar menu"><Icon name="close" /></button></div><nav aria-label="Navegação principal">{navItems.map((item) => <button type="button" key={item.id} className={tab === item.id ? "active" : ""} onClick={() => go(item.id)}><Icon name={tabIcon(item.id)} /><span>{item.label}</span></button>)}</nav><p className="sidebar-note">GESTÃO INSTITUCIONAL<br />ACESSO RESTRITO</p></aside>
     <section className="dashboard-content">
-      <header className="dashboard-header"><div><p>{tab === "dashboard" ? "VISÃO GERAL" : tab === "acervo" ? "ACERVO VISUAL" : tab === "cadastro" ? "CATÁLOGO INTELIGENTE" : "CONTROLE DE ESTOQUE"}</p><h1>{tab === "dashboard" ? "Painel da Adega" : tab === "acervo" ? "Garrafas em adega" : tab === "cadastro" ? "Cadastrar garrafa" : "Relação de garrafas"}</h1></div><button className="catalog-open header-add" type="button" onClick={() => setTab("cadastro")}>+ Adicionar garrafa</button></header>
+      <div className="mobile-topbar"><button type="button" className="menu-trigger" onClick={() => setMenuOpen(true)} aria-label="Abrir menu"><Icon name="menu" /></button><strong>{heading(tab)}</strong><button type="button" className="mobile-add" onClick={() => go("cadastro")} aria-label="Cadastrar garrafa"><Icon name="plus" /></button></div>
+      <header className="dashboard-header"><div><p>{eyebrow(tab)}</p><h1>{heading(tab)}</h1></div><button className="catalog-open header-add" type="button" onClick={() => go("cadastro")}><Icon name="plus" />Adicionar garrafa</button></header>
       {tab === "dashboard" && <section className="summary-grid" aria-label="Resumo do estoque">{summary.map((item) => <article className="summary-card" key={item.label}><p>{item.label}</p><strong>{item.value}</strong><span>{item.detail}</span></article>)}</section>}
       {tab === "acervo" && <WineCollection wines={wines} />}
       {tab === "cadastro" && <><WineCatalog initialOpen />{!wines.length && <section className="import-box"><div><p>IMPORTAÇÃO INICIAL</p><h2>Carregue seu estoque atual</h2><span>Use o CSV exportado da planilha. O sistema valida os totais antes de gravar os dados.</span></div><WineImporter /></section>}</>}

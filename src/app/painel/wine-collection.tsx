@@ -15,6 +15,13 @@ type EditData = { name: string; winery: string; vintage: string; grape: string; 
 
 const money = (value: number | null) => value === null ? null : value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const imageSource = (wine: CollectionWine) => wine.image_path ? `/api/wine-image?path=${encodeURIComponent(wine.image_path)}` : wine.image_url;
+function ActionIcon({ name }: { name: "out" | "in" | "note" | "edit" }) {
+  const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (name === "out") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M4 12h12M12 7l5 5-5 5M5 5v14" /></svg>;
+  if (name === "in") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M20 12H8M12 7l-5 5 5 5M19 5v14" /></svg>;
+  if (name === "note") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M5 4h14v12H9l-4 4zM9 8h6M9 12h4" /></svg>;
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="m14 5 5 5M5 19l3.5-.8L18 8.7 14.3 5 4.8 14.5z" /></svg>;
+}
 
 export function WineCollection({ wines }: { wines: CollectionWine[] }) {
   const [query, setQuery] = useState("");
@@ -142,8 +149,8 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
       const source = imageSource(wine); const added = cart.some((item) => item.wineId === wine.id);
       return <article className="wine-card" key={wine.id}><div className="wine-card-image">{source ? <img src={source} alt={`Garrafa ${wine.name}`} /> : <span>Sem foto</span>}{wine.current_stock <= 0 && <b>Esgotado</b>}</div>
         <div className="wine-card-info"><small className="wine-location">{wine.location || "Localização não informada"}</small><h3>{wine.name}</h3><p>{[wine.wine_type, wine.volume_ml && `${wine.volume_ml} ml`].filter(Boolean).join(" · ") || "Garrafa"}</p>
-          <strong>{money(wine.reference_price ?? wine.unit_value) || "Valor não informado"}</strong><div><span className={wine.current_stock > 0 ? "availability" : "availability empty"}>{wine.current_stock} em estoque</span><button type="button" disabled={wine.current_stock <= 0 || added} onClick={() => add(wine.id)}>{added ? "Na saída" : "+ Saída"}</button></div>
-          <div className="card-tools"><button type="button" onClick={() => openQuick(wine, "entrada")}>+ Entrada</button><button type="button" onClick={() => openQuick(wine, "note")}>Observação</button><button type="button" onClick={() => openEditor(wine)}>Editar</button></div>
+          <strong>{money(wine.reference_price ?? wine.unit_value) || "Valor não informado"}</strong><div><span className={wine.current_stock > 0 ? "availability" : "availability empty"}>{wine.current_stock} em estoque</span><button className="card-action card-action-primary" type="button" disabled={wine.current_stock <= 0 || added} onClick={() => add(wine.id)}><ActionIcon name="out" />{added ? "Na saída" : "Saída"}</button></div>
+          <div className="card-tools"><button className="card-action" type="button" onClick={() => openQuick(wine, "entrada")}><ActionIcon name="in" />Entrada</button><button className="card-action" type="button" onClick={() => openQuick(wine, "note")}><ActionIcon name="note" />Nota</button><button className="card-action" type="button" onClick={() => openEditor(wine)}><ActionIcon name="edit" />Editar</button></div>
         </div>
       </article>;
     }) : <p className="collection-empty">Nenhuma garrafa encontrada com esse filtro.</p>}</div><div className="desktop-issue-cart">{cartPanel()}</div></div>

@@ -40,8 +40,8 @@ const resizeForProcessing = async (source: Blob) => new Promise<Blob>((resolve) 
   image.onerror = () => { URL.revokeObjectURL(sourceUrl); resolve(source); }; image.src = sourceUrl;
 });
 
-export function WineCatalog() {
-  const [open, setOpen] = useState(false); const [query, setQuery] = useState(""); const [results, setResults] = useState<SearchResult[]>([]); const [form, setForm] = useState(blank); const [photo, setPhoto] = useState<File | null>(null); const [preview, setPreview] = useState(""); const [message, setMessage] = useState(""); const [searching, setSearching] = useState(false); const [saving, setSaving] = useState(false); const [cameraOpen, setCameraOpen] = useState(false); const [cameraMessage, setCameraMessage] = useState(""); const [processingPhoto, setProcessingPhoto] = useState(false);
+export function WineCatalog({ initialOpen = false }: { initialOpen?: boolean }) {
+  const [open, setOpen] = useState(initialOpen); const [query, setQuery] = useState(""); const [results, setResults] = useState<SearchResult[]>([]); const [form, setForm] = useState(blank); const [photo, setPhoto] = useState<File | null>(null); const [preview, setPreview] = useState(""); const [message, setMessage] = useState(""); const [searching, setSearching] = useState(false); const [saving, setSaving] = useState(false); const [cameraOpen, setCameraOpen] = useState(false); const [cameraMessage, setCameraMessage] = useState(""); const [processingPhoto, setProcessingPhoto] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null); const streamRef = useRef<MediaStream | null>(null);
   const set = (key: keyof typeof blank, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const stopCamera = () => { streamRef.current?.getTracks().forEach((track) => track.stop()); streamRef.current = null; setCameraOpen(false); };

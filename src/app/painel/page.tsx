@@ -1,31 +1,30 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { WineImporter } from "./wine-importer";
-import { WineCatalog } from "./wine-catalog";
-import { CollectionWine, WineCollection } from "./wine-collection";
+import { CollectionWine } from "./wine-collection";
+import { PanelTabs } from "./panel-tabs";
 
 const url = process.env.SUPABASE_URL!;
 const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
 
-type Wine = CollectionWine & { unit_value: number | null; initial_quantity: number; quantity_out: number; current_stock: number; history_notes: string | null };
+type Wine = CollectionWine & {
+  unit_value: number | null; initial_quantity: number; quantity_out: number; current_stock: number; history_notes: string | null;
+};
 
 export default async function Painel() {
-  const cookieStore = await cookies(); const token = cookieStore.get("adega_access_token")?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get("adega_access_token")?.value;
   if (!token) redirect("/");
-  const response = await fetch(`${url}/rest/v1/wines?select=id,name,winery,vintage,grape_variety,country,wine_type,volume_ml,reference_price,unit_value,location,initial_quantity,quantity_out,current_stock,history_notes,image_url,image_path&order=name.asc`, { headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: "no-store" });
-  const wines: Wine[] = response.ok ? await response.json() : [];
-  const totals = wines.reduce((result, wine) => ({ stock: result.stock + wine.current_stock, low: result.low + (wine.current_stock > 0 && wine.current_stock <= 2 ? 1 : 0) }), { stock: 0, low: 0 });
-  const summary = [{ label: "Garrafas cadastradas", value: wines.length, detail: "rótulos no acervo" }, { label: "Garrafas em estoque", value: totals.stock, detail: "unidades disponíveis" }, { label: "Estoque baixo", value: totals.low, detail: "itens para verificar" }];
 
-  return <main className="dashboard-page">
-    <aside className="dashboard-sidebar"><div className="sidebar-brand"><img src="/brand/gabinete-5rm-bordo.png" alt="Símbolo da 5ª Região Militar" /><div><strong>Adega 5ª RM</strong><span>Controle de garrafas</span></div></div><nav aria-label="Navegação principal"><a className="active" href="/painel"><svg className="sidebar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg> Painel</a><a href="#relacao"><svg className="sidebar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></svg> Acervo visual</a></nav><p className="sidebar-note">GESTÃO INSTITUCIONAL<br />ACESSO RESTRITO</p></aside>
-    <section className="dashboard-content">
-      <header className="dashboard-header"><div><p>VISÃO GERAL</p><h1>Painel da Adega</h1></div></header>
-      <section className="summary-grid" aria-label="Resumo do estoque">{summary.map((item) => <article className="summary-card" key={item.label}><p>{item.label}</p><strong>{item.value}</strong><span>{item.detail}</span></article>)}</section>
-      <WineCatalog />
-      {!wines.length && <section className="import-box"><div><p>IMPORTAÇÃO INICIAL</p><h2>Carregue seu estoque atual</h2><span>Use o CSV exportado da planilha. O sistema valida os totais antes de gravar os dados.</span></div><WineImporter /></section>}
-      {wines.length > 0 && <WineCollection wines={wines} />}
-      <section className="wine-list"><div className="section-heading"><div><p>CONTROLE DE ESTOQUE</p><h2>Relação de garrafas</h2></div><span>{wines.length ? `${wines.length} rótulos cadastrados` : "Aguardando importação"}</span></div><div className="table-wrap"><table><thead><tr><th>Garrafa</th><th>Nome</th><th>Valor de referência</th><th>Quantidade inicial</th><th>Saídas históricas</th><th>Em adega</th><th>Status</th><th>Observações</th></tr></thead><tbody>{wines.length ? wines.map((wine) => { const image = wine.image_path ? `/api/wine-image?path=${encodeURIComponent(wine.image_path)}` : wine.image_url; const price = wine.reference_price ?? wine.unit_value; return <tr key={wine.id}><td>{image ? <img className="table-bottle" src={image} alt={`Garrafa ${wine.name}`} /> : <span className="table-bottle empty">—</span>}</td><td><strong>{wine.name}</strong></td><td>{price !== null ? price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "Não informado"}</td><td>{wine.initial_quantity}</td><td>{wine.quantity_out}</td><td>{wine.current_stock}</td><td><span className={wine.current_stock < 0 ? "stock-tag discrepancy" : wine.current_stock <= 2 ? "stock-tag low" : "stock-tag"}>{wine.current_stock < 0 ? "Divergência" : wine.current_stock <= 2 ? "Baixo" : "Disponível"}</span></td><td>{wine.history_notes ? <details><summary>Ver</summary><p>{wine.history_notes}</p></details> : "-"}</td></tr>; }) : <tr><td colSpan={8}><div className="empty-state"><strong>Nenhuma garrafa cadastrada</strong><span>Use a importação inicial acima para carregar a relação.</span></div></td></tr>}</tbody></table></div></section>
-    </section>
-  </main>;
+  const response = await fetch(
+    `${url}/rest/v1/wines?select=id,name,winery,vintage,grape_variety,country,wine_type,volume_ml,reference_price,unit_value,location,initial_quantity,quantity_out,current_stock,history_notes,image_url,image_path&order=name.asc`,
+    { headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: "no-store" },
+  );
+  const wines: Wine[] = response.ok ? await response.json() : [];
+  const totals = wines.reduce((result, wine) => ({
+    stock: result.stock + wine.current_stock,
+    low: result.low + (wine.current_stock > 0 && wine.current_stock <= 2 ? 1 : 0),
+    value: result.value + (wine.current_stock * (wine.reference_price ?? wine.unit_value ?? 0)),
+  }), { stock: 0, low: 0, value: 0 });
+
+  return <PanelTabs wines={wines} totalStock={totals.stock} lowStock={totals.low} totalValue={totals.value} />;
 }

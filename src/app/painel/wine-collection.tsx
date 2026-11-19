@@ -14,7 +14,7 @@ type QuickAction = { wine: CollectionWine; mode: "entrada" | "note" } | null;
 type EditData = { name: string; winery: string; vintage: string; grape: string; type: string; country: string; volumeMl: string; referencePrice: string; location: string; notes: string };
 
 const money = (value: number | null) => value === null ? null : value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const imageSource = (wine: CollectionWine) => wine.image_path ? `/api/wine-image?path=${encodeURIComponent(wine.image_path)}` : wine.image_url;
+const imageSource = (wine: CollectionWine) => wine.image_path ? `/api/wine-image?path=${encodeURIComponent(wine.image_path)}` : wine.image_url ? `/api/wine-image?url=${encodeURIComponent(wine.image_url)}` : null;
 function ActionIcon({ name }: { name: "out" | "in" | "note" | "edit" }) {
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   if (name === "out") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M4 12h12M12 7l5 5-5 5M5 5v14" /></svg>;

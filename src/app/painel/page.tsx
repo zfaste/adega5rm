@@ -25,7 +25,7 @@ export default async function Painel() {
     `${url}/rest/v1/wine_movements?select=id,wine_id,kind,quantity,note,guide_reference,occurred_at&order=occurred_at.desc`,
     { headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: "no-store" },
   );
-  const wineDetails = new Map(wines.map((wine) => [wine.id, { name: wine.name, image: wine.image_path ? `/api/wine-image?path=${encodeURIComponent(wine.image_path)}` : wine.image_url }]));
+  const wineDetails = new Map(wines.map((wine) => [wine.id, { name: wine.name, image: wine.image_path ? `/api/wine-image?path=${encodeURIComponent(wine.image_path)}` : wine.image_url ? `/api/wine-image?url=${encodeURIComponent(wine.image_url)}` : null }]));
   const movements: Movement[] = movementResponse.ok ? (await movementResponse.json()).map((movement: { id: string; wine_id: string; kind: "entrada" | "saida"; quantity: number; note: string | null; guide_reference: string | null; occurred_at: string }) => ({ id: movement.id, wineName: wineDetails.get(movement.wine_id)?.name || "Garrafa removida", wineImage: wineDetails.get(movement.wine_id)?.image || null, kind: movement.kind, quantity: movement.quantity, note: movement.note, guideReference: movement.guide_reference, occurredAt: movement.occurred_at })) : [];
   const totals = wines.reduce((result, wine) => ({
     stock: result.stock + wine.current_stock,

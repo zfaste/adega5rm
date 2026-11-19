@@ -21,23 +21,33 @@ async function imageData(source: string | null) {
 
 async function createPdf(title: string, rows: ReportRow[], period?: string) {
   const { jsPDF } = await import("jspdf");
-  const pdf = new jsPDF({ unit: "mm", format: "a4" }); const width = pdf.internal.pageSize.getWidth(); const height = pdf.internal.pageSize.getHeight(); let y = 20;
-  const line = (text: string, size = 10, color: [number, number, number] = [67, 52, 57], indent = 15, maxWidth = width - 30) => { pdf.setFontSize(size); pdf.setTextColor(...color); const lines = pdf.splitTextToSize(text, maxWidth); if (y + lines.length * (size * .5 + 1.8) > height - 18) { pdf.addPage(); y = 20; } pdf.text(lines, indent, y); y += lines.length * (size * .5 + 1.8); };
-  const divider = () => { y += 3; if (y > height - 18) { pdf.addPage(); y = 20; } pdf.setDrawColor(230, 220, 223); pdf.line(15, y, width - 15, y); y += 7; };
-  pdf.setFillColor(104, 23, 47); pdf.rect(0, 0, width, 12, "F"); pdf.setTextColor(255, 255, 255); pdf.setFontSize(10); pdf.text("ADEGA 5ª RM · CONTROLE DE GARRAFAS", 15, 7.7); y = 23;
-  line(title, 20, [43, 34, 37]); if (period) line(period, 10, [121, 108, 112]); line(`${rows.length} movimentação${rows.length !== 1 ? "ões" : ""} · ${rows.reduce((total, row) => total + row.quantity, 0)} garrafas`, 10, [126, 29, 58]); y += 5;
+  const pdf = new jsPDF({ unit: "mm", format: "a4" }); const width = pdf.internal.pageSize.getWidth(); const height = pdf.internal.pageSize.getHeight(); const left = 16; const right = width - 16; let y = 26;
+  const footer = (page: number, pages: number) => { pdf.setDrawColor(229, 221, 223); pdf.line(left, height - 14, right, height - 14); pdf.setFontSize(8); pdf.setTextColor(130, 117, 122); pdf.text(`Adega 5ª RM · Gerado em ${formatDate(new Date().toISOString())}`, left, height - 8); pdf.text(`Página ${page} de ${pages}`, right, height - 8, { align: "right" }); };
+  const heading = () => { pdf.setFillColor(104, 23, 47); pdf.rect(0, 0, width, 16, "F"); pdf.setTextColor(255, 255, 255); pdf.setFontSize(8); pdf.text("ADEGA 5ª RM", left, 8); pdf.setFontSize(7); pdf.setTextColor(244, 218, 226); pdf.text("CONTROLE DE GARRAFAS", left, 12); };
+  const newPage = () => { pdf.addPage(); heading(); y = 26; };
+  const text = (value: string, x: number, startY: number, maxWidth: number, size = 10, color: [number, number, number] = [55, 44, 48]) => { pdf.setFontSize(size); pdf.setTextColor(...color); const lines = pdf.splitTextToSize(value, maxWidth); pdf.text(lines, x, startY); return lines.length * (size * .44 + 1.7); };
+  heading();
+  pdf.setFontSize(20); pdf.setTextColor(43, 34, 37); const titleLines = pdf.splitTextToSize(title, right - left); pdf.text(titleLines, left, y); y += titleLines.length * 10 + 2;
+  if (period) { pdf.setFontSize(10); pdf.setTextColor(119, 105, 110); pdf.text(period, left, y); y += 7; }
+  pdf.setFillColor(251, 246, 247); pdf.roundedRect(left, y, right - left, 13, 3, 3, "F"); pdf.setFontSize(9); pdf.setTextColor(126, 29, 58); pdf.text(`${rows.length} movimentação${rows.length !== 1 ? "ões" : ""}`, left + 5, y + 8); pdf.setFontSize(11); pdf.text(`${rows.reduce((total, row) => total + row.quantity, 0)} garrafas`, right - 5, y + 8, { align: "right" }); y += 20;
   for (const row of rows) {
-    divider(); line(formatDate(row.occurredAt), 9, [117, 103, 108]); line(row.title, 14, [43, 34, 37]); line(`${row.kind === "entrada" ? "Entrada" : "Saída"} · ${row.quantity} garrafa${row.quantity !== 1 ? "s" : ""}`, 10, row.kind === "entrada" ? [39, 108, 61] : [126, 29, 58]);
-    if (row.observation) line(`Observação: ${row.observation}`, 10, [84, 72, 77]);
-    y += 3; line(row.items.length > 1 ? "Garrafas movimentadas" : "Garrafa movimentada", 10, [126, 29, 58]);
+    const titleHeight = Math.max(7, pdf.splitTextToSize(row.title, right - left - 20).length * 5.4); const obsHeight = row.observation ? pdf.splitTextToSize(row.observation, right - left - 12).length * 4.4 + 8 : 0; const headerHeight = 27 + titleHeight + obsHeight;
+    if (y + headerHeight > height - 22) newPage();
+    pdf.setFillColor(250, 248, 248); pdf.roundedRect(left, y, right - left, headerHeight, 3, 3, "F"); pdf.setFillColor(row.kind === "entrada" ? 226 : 126, row.kind === "entrada" ? 243 : 29, row.kind === "entrada" ? 232 : 58); pdf.roundedRect(left, y, 3, headerHeight, 1, 1, "F");
+    text(formatDate(row.occurredAt), left + 7, y + 7, right - left - 14, 8, [125, 112, 117]); text(row.title, left + 7, y + 14, right - left - 50, 13, [43, 34, 37]);
+    pdf.setFillColor(row.kind === "entrada" ? 230 : 248, row.kind === "entrada" ? 244 : 231, row.kind === "entrada" ? 233 : 236); pdf.roundedRect(right - 35, y + 6, 28, 8, 4, 4, "F"); pdf.setFontSize(8); pdf.setTextColor(row.kind === "entrada" ? 39 : 126, row.kind === "entrada" ? 108 : 29, row.kind === "entrada" ? 61 : 58); pdf.text(row.kind === "entrada" ? "ENTRADA" : "SAÍDA", right - 21, y + 11.2, { align: "center" });
+    pdf.setFontSize(10); pdf.setTextColor(126, 29, 58); pdf.text(`${row.quantity} garrafa${row.quantity !== 1 ? "s" : ""}`, left + 7, y + 22 + titleHeight); if (row.observation) { pdf.setFontSize(9); pdf.setTextColor(83, 71, 76); pdf.text(`Obs.: ${row.observation}`, left + 7, y + 29 + titleHeight); } y += headerHeight + 5;
+    pdf.setFontSize(8); pdf.setTextColor(126, 29, 58); pdf.text(row.items.length > 1 ? "GARRAFAS MOVIMENTADAS" : "GARRAFA MOVIMENTADA", left, y); y += 5;
     for (const item of row.items) {
-      const image = await imageData(item.image); const itemTop = y;
-      if (image) { try { pdf.addImage(image, image.startsWith("data:image/jpeg") ? "JPEG" : "PNG", 17, y - 3, 13, 20, undefined, "FAST"); } catch { /* imagem opcional */ } }
-      line(`${item.name} — ${item.quantity} unidade${item.quantity !== 1 ? "s" : ""}`, 10, [43, 34, 37], image ? 34 : 17, image ? width - 50 : width - 34);
-      y = Math.max(y, itemTop + 20) + 3;
+      const image = await imageData(item.image); const itemX = image ? left + 20 : left + 5; const itemWidth = right - itemX - 32; const lineCount = pdf.splitTextToSize(item.name, itemWidth).length; const rowHeight = image ? Math.max(19, lineCount * 4.8 + 4) : Math.max(11, lineCount * 4.8 + 4); if (y + rowHeight > height - 22) newPage();
+      pdf.setFillColor(255, 255, 255); pdf.setDrawColor(237, 231, 232); pdf.roundedRect(left, y, right - left, rowHeight, 2, 2, "FD");
+      if (image) { try { pdf.addImage(image, image.startsWith("data:image/jpeg") ? "JPEG" : "PNG", left + 4, y + 2, 11, 15, undefined, "FAST"); } catch { /* imagem opcional */ } }
+      text(item.name, itemX, y + (image ? 7 : 6.8), itemWidth, 9, [52, 42, 46]); pdf.setFontSize(10); pdf.setTextColor(104, 23, 47); pdf.text(String(item.quantity), right - 7, y + rowHeight / 2 + 1.8, { align: "right" });
+      y += rowHeight + 3;
     }
+    y += 4;
   }
-  const pages = pdf.getNumberOfPages(); for (let page = 1; page <= pages; page += 1) { pdf.setPage(page); pdf.setFontSize(8); pdf.setTextColor(130, 117, 122); pdf.text(`Gerado em ${formatDate(new Date().toISOString())} · Página ${page} de ${pages}`, 15, height - 9); }
+  const pages = pdf.getNumberOfPages(); for (let page = 1; page <= pages; page += 1) { pdf.setPage(page); footer(page, pages); }
   pdf.save(`${title.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}-${dateForFile()}.pdf`);
 }
 

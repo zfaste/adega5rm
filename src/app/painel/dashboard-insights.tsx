@@ -36,7 +36,7 @@ export function DashboardInsights({ wines, movements }: { wines: Wine[]; movemen
     </article>
     <article className="insight-card bottles-card">
       <div className="insight-heading"><div><p>ACERVO EM DESTAQUE</p><h2>Garrafas disponíveis</h2></div><span>Deslize para ver</span></div>
-      <div className="bottle-strip">{featured.length ? featured.map((wine) => { const image = wine.image_path ? `/api/wine-image?path=${encodeURIComponent(wine.image_path)}` : wine.image_url; return <article key={wine.id}>{image ? <img src={image} alt={`Garrafa ${wine.name}`} /> : <span>🍷</span>}<strong>{wine.name}</strong><small>{wine.current_stock} em estoque</small></article>; }) : <p>Cadastre garrafas para visualizar o acervo.</p>}</div>
+      <div className="bottle-strip">{featured.length ? featured.map((wine) => { const image = wine.image_path ? `/api/wine-image?path=${encodeURIComponent(wine.image_path)}` : wine.image_url ? `/api/wine-image?url=${encodeURIComponent(wine.image_url)}` : null; return <article key={wine.id}>{image ? <img src={image} alt={`Garrafa ${wine.name}`} /> : <span>🍷</span>}<strong>{wine.name}</strong><small>{wine.current_stock} em estoque</small></article>; }) : <p>Cadastre garrafas para visualizar o acervo.</p>}</div>
     </article>
   </section>;
 }

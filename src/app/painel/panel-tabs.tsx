@@ -6,6 +6,7 @@ import { CollectionWine, WineCollection } from "./wine-collection";
 import { WineCatalog } from "./wine-catalog";
 import { WineImporter } from "./wine-importer";
 import { Movement, MovementReport } from "./movement-report";
+import { DashboardInsights } from "./dashboard-insights";
 
 type Wine = CollectionWine & { unit_value: number | null; initial_quantity: number; quantity_out: number; current_stock: number; history_notes: string | null };
 type Tab = "dashboard" | "acervo" | "cadastro" | "movimentacoes" | "relacao";
@@ -38,7 +39,7 @@ export function PanelTabs({ wines, movements, totalStock, lowStock, totalValue }
     <section className="dashboard-content">
       <div className="mobile-topbar"><button type="button" className="menu-trigger" onClick={() => setMenuOpen(true)} aria-label="Abrir menu"><Icon name="menu" /></button><strong>{heading(tab)}</strong><button type="button" className="mobile-add" onClick={() => go("cadastro")} aria-label="Cadastrar garrafa"><Icon name="plus" /></button></div>
       <header className="dashboard-header"><div><p>{eyebrow(tab)}</p><h1>{heading(tab)}</h1></div><button className="catalog-open header-add" type="button" onClick={() => go("cadastro")}><Icon name="plus" />Adicionar garrafa</button></header>
-      {tab === "dashboard" && <section className="summary-grid" aria-label="Resumo do estoque">{summary.map((item) => <article className="summary-card" key={item.label}><p>{item.label}</p><strong>{item.value}</strong><span>{item.detail}</span></article>)}</section>}
+      {tab === "dashboard" && <><section className="summary-grid" aria-label="Resumo do estoque">{summary.map((item) => <article className="summary-card" key={item.label}><p>{item.label}</p><strong>{item.value}</strong><span>{item.detail}</span></article>)}</section><DashboardInsights wines={wines} movements={movements} /></>}
       {tab === "acervo" && <WineCollection wines={wines} />}
       {tab === "cadastro" && <><WineCatalog initialOpen />{!wines.length && <section className="import-box"><div><p>IMPORTAÇÃO INICIAL</p><h2>Carregue seu estoque atual</h2><span>Use o CSV exportado da planilha. O sistema valida os totais antes de gravar os dados.</span></div><WineImporter /></section>}</>}
       {tab === "movimentacoes" && <MovementReport movements={movements} />}

@@ -21,30 +21,61 @@ async function imageData(source: string | null) {
 
 async function createPdf(title: string, rows: ReportRow[]) {
   const { jsPDF } = await import("jspdf");
-  const pdf = new jsPDF({ unit: "mm", format: "a4" }); const width = pdf.internal.pageSize.getWidth(); const height = pdf.internal.pageSize.getHeight(); const left = 16; const right = width - 16; const brand = await imageData("/brand/gabinete-5rm-bordo.png"); let y = 29;
-  const footer = (page: number, pages: number) => { pdf.setDrawColor(229, 221, 223); pdf.line(left, height - 14, right, height - 14); pdf.setFontSize(8); pdf.setTextColor(130, 117, 122); pdf.text(`Adega 5ª RM · Gerado em ${formatDate(new Date().toISOString())}`, left, height - 8); pdf.text(`Página ${page} de ${pages}`, right, height - 8, { align: "right" }); };
-  const heading = () => { pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, width, 19, "F"); pdf.setDrawColor(104, 23, 47); pdf.setLineWidth(.7); pdf.line(0, 18.6, width, 18.6); if (brand) { try { pdf.addImage(brand, "PNG", left, 3, 10, 13, undefined, "FAST"); } catch { /* brasão opcional */ } } pdf.setTextColor(104, 23, 47); pdf.setFontSize(10); pdf.text("ADEGA 5ª RM", left + 13, 9); pdf.setFontSize(7); pdf.setTextColor(116, 96, 102); pdf.text("CONTROLE DE GARRAFAS", left + 13, 13.2); };
-  const newPage = () => { pdf.addPage(); heading(); y = 29; };
-  const text = (value: string, x: number, startY: number, maxWidth: number, size = 10, color: [number, number, number] = [55, 44, 48]) => { pdf.setFontSize(size); pdf.setTextColor(...color); const lines = pdf.splitTextToSize(value, maxWidth); pdf.text(lines, x, startY); return lines.length * (size * .44 + 1.7); };
-  const singleMovement = rows.length === 1; heading();
-  pdf.setFontSize(20); pdf.setTextColor(43, 34, 37); const titleLines = pdf.splitTextToSize(title, right - left); pdf.text(titleLines, left, y); y += titleLines.length * 10 + 2;
-  pdf.setFillColor(251, 246, 247); pdf.roundedRect(left, y, right - left, 13, 3, 3, "F"); pdf.setFontSize(9); pdf.setTextColor(126, 29, 58); pdf.text(singleMovement ? "DETALHAMENTO DA MOVIMENTAÇÃO" : `${rows.length} movimentações no período`, left + 5, y + 8); if (!singleMovement) { pdf.setFontSize(11); pdf.text(`${rows.reduce((total, row) => total + row.quantity, 0)} garrafas`, right - 5, y + 8, { align: "right" }); } y += 20;
-  for (const row of rows) {
-    const titleHeight = Math.max(7, pdf.splitTextToSize(row.title, right - left - 20).length * 5.4); const obsHeight = row.observation ? pdf.splitTextToSize(row.observation, right - left - 12).length * 4.4 + 8 : 0; const headerHeight = 27 + titleHeight + obsHeight;
-    if (y + headerHeight > height - 22) newPage();
-    pdf.setFillColor(250, 248, 248); pdf.roundedRect(left, y, right - left, headerHeight, 3, 3, "F"); pdf.setFillColor(row.kind === "entrada" ? 226 : 126, row.kind === "entrada" ? 243 : 29, row.kind === "entrada" ? 232 : 58); pdf.roundedRect(left, y, 3, headerHeight, 1, 1, "F");
-    text(formatDate(row.occurredAt), left + 7, y + 7, right - left - 14, 8, [125, 112, 117]); text(row.title, left + 7, y + 14, right - left - 50, 13, [43, 34, 37]);
-    pdf.setFillColor(row.kind === "entrada" ? 230 : 248, row.kind === "entrada" ? 244 : 231, row.kind === "entrada" ? 233 : 236); pdf.roundedRect(right - 35, y + 6, 28, 8, 4, 4, "F"); pdf.setFontSize(8); pdf.setTextColor(row.kind === "entrada" ? 39 : 126, row.kind === "entrada" ? 108 : 29, row.kind === "entrada" ? 61 : 58); pdf.text(row.kind === "entrada" ? "ENTRADA" : "SAÍDA", right - 21, y + 11.2, { align: "center" });
-    pdf.setFontSize(10); pdf.setTextColor(126, 29, 58); pdf.text(`${row.quantity} garrafa${row.quantity !== 1 ? "s" : ""}`, left + 7, y + 22 + titleHeight); if (row.observation) { pdf.setFontSize(9); pdf.setTextColor(83, 71, 76); pdf.text(`Obs.: ${row.observation}`, left + 7, y + 29 + titleHeight); } y += headerHeight + 5;
-    pdf.setFontSize(8); pdf.setTextColor(126, 29, 58); pdf.text(row.items.length > 1 ? "GARRAFAS MOVIMENTADAS" : "GARRAFA MOVIMENTADA", left, y); y += 5;
-    for (const item of row.items) {
-      const image = await imageData(item.image); const itemX = image ? left + 20 : left + 5; const itemWidth = right - itemX - 32; const lineCount = pdf.splitTextToSize(item.name, itemWidth).length; const rowHeight = image ? Math.max(19, lineCount * 4.8 + 4) : Math.max(11, lineCount * 4.8 + 4); if (y + rowHeight > height - 22) newPage();
-      pdf.setFillColor(255, 255, 255); pdf.setDrawColor(237, 231, 232); pdf.roundedRect(left, y, right - left, rowHeight, 2, 2, "FD");
-      if (image) { try { pdf.addImage(image, image.startsWith("data:image/jpeg") ? "JPEG" : "PNG", left + 4, y + 2, 11, 15, undefined, "FAST"); } catch { /* imagem opcional */ } }
-      text(item.name, itemX, y + (image ? 7 : 6.8), itemWidth, 9, [52, 42, 46]); pdf.setFontSize(10); pdf.setTextColor(104, 23, 47); pdf.text(String(item.quantity), right - 7, y + rowHeight / 2 + 1.8, { align: "right" });
-      y += rowHeight + 3;
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const width = pdf.internal.pageSize.getWidth(); const height = pdf.internal.pageSize.getHeight(); const left = 16; const right = width - 16;
+  const burgundy: [number, number, number] = [118, 20, 51]; const pale: [number, number, number] = [250, 244, 246]; const ink: [number, number, number] = [45, 39, 41]; const muted: [number, number, number] = [112, 101, 105];
+  const brand = await imageData("/brand/gabinete-5rm-bordo.png"); const generatedAt = formatDate(new Date().toISOString()); const singleMovement = rows.length === 1; const total = rows.reduce((sum, row) => sum + row.quantity, 0); let y = 76;
+  const footer = (page: number, pages: number) => { pdf.setDrawColor(219, 207, 211); pdf.setLineWidth(.35); pdf.line(left, height - 15, right, height - 15); pdf.setFontSize(8); pdf.setTextColor(...muted); pdf.text("ADEGA 5ª RM · Controle de garrafas", left, height - 9); pdf.text(`Página ${page} de ${pages}`, right, height - 9, { align: "right" }); };
+  const formalHeading = (continued = false) => {
+    pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, width, continued ? 31 : 70, "F");
+    if (continued) {
+      if (brand) { try { pdf.addImage(brand, "PNG", left, 5, 9, 12, undefined, "FAST"); } catch { /* brasão opcional */ } }
+      pdf.setFontSize(9); pdf.setFont("helvetica", "bold"); pdf.setTextColor(...burgundy); pdf.text("ADEGA 5ª RM", left + 12, 11);
+      pdf.setFontSize(7); pdf.setFont("helvetica", "normal"); pdf.setTextColor(...muted); pdf.text("RELATÓRIO DE CONTROLE DE GARRAFAS", left + 12, 15);
+      pdf.setDrawColor(...burgundy); pdf.setLineWidth(.7); pdf.line(left, 23, right, 23); return;
     }
-    y += 4;
+    if (brand) { try { pdf.addImage(brand, "PNG", width / 2 - 10, 8, 20, 27, undefined, "FAST"); } catch { /* brasão opcional */ } }
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(...ink); pdf.text("ADEGA 5ª RM", width / 2, 42, { align: "center" });
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(8); pdf.setTextColor(...muted); pdf.text("CONTROLE DE GARRAFAS", width / 2, 46.5, { align: "center" });
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(15); pdf.setTextColor(...burgundy); pdf.text("RELATÓRIO DE CONTROLE DE GARRAFAS", width / 2, 57, { align: "center" });
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(...muted); pdf.text("Adega 5ª RM", width / 2, 62, { align: "center" });
+    pdf.setDrawColor(...burgundy); pdf.setLineWidth(.7); pdf.line(left, 67, right, 67);
+  };
+  const newPage = () => { pdf.addPage(); formalHeading(true); y = 33; };
+  const text = (value: string, x: number, startY: number, maxWidth: number, size = 10, color: [number, number, number] = ink, style: "normal" | "bold" = "normal") => { pdf.setFont("helvetica", style); pdf.setFontSize(size); pdf.setTextColor(...color); const lines = pdf.splitTextToSize(value, maxWidth); pdf.text(lines, x, startY); return lines.length * (size * .44 + 1.7); };
+  formalHeading();
+  const destination = singleMovement ? rows[0].title : (title.replace(/^Relatório de /i, "") || "Movimentações");
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(...burgundy); pdf.text(singleMovement ? "DESTINO / TÍTULO DA MOVIMENTAÇÃO" : "ABRANGÊNCIA DO RELATÓRIO", left, y);
+  const destinationHeight = text(destination, left, y + 6, right - left - 65, 14, ink, "bold");
+  pdf.setFont("helvetica", "normal"); pdf.setFontSize(8); pdf.setTextColor(...muted); pdf.text(`Gerado em ${generatedAt}`, right, y + 6, { align: "right" });
+  y += Math.max(destinationHeight + 8, 20);
+  pdf.setFillColor(...pale); pdf.roundedRect(left, y, right - left, 18, 2, 2, "F");
+  const stat = (label: string, value: string, x: number) => { pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(...muted); pdf.text(label, x, y + 6); pdf.setFont("helvetica", "bold"); pdf.setFontSize(12); pdf.setTextColor(...burgundy); pdf.text(value, x, y + 13); };
+  stat("Tipo", singleMovement ? (rows[0].kind === "entrada" ? "Entrada" : "Saída") : "Geral", left + 6); stat("Lançamentos", String(rows.length), left + 62); stat("Garrafas", String(total), left + 112); y += 26;
+  for (const row of rows) {
+    const showRowHeading = !singleMovement;
+    const observationHeight = row.observation ? pdf.splitTextToSize(`Observação: ${row.observation}`, right - left - 10).length * 4.5 + 7 : 0;
+    if (showRowHeading) {
+      const headingHeight = 22 + observationHeight;
+      if (y + headingHeight > height - 28) newPage();
+      pdf.setFillColor(...burgundy); pdf.roundedRect(left, y, right - left, 8, 2, 2, "F"); pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(255, 255, 255); pdf.text(row.kind === "entrada" ? "ENTRADA" : "SAÍDA", left + 4, y + 5.2); pdf.text(formatDate(row.occurredAt), right - 4, y + 5.2, { align: "right" }); y += 13;
+      const rowTitleHeight = text(row.title, left, y, right - left - 32, 11, ink, "bold"); pdf.setFont("helvetica", "bold"); pdf.setFontSize(10); pdf.setTextColor(...burgundy); pdf.text(`${row.quantity}`, right, y, { align: "right" }); y += rowTitleHeight + 2;
+      if (row.observation) { y += text(`Observação: ${row.observation}`, left, y, right - left, 8.5, muted) + 3; }
+    } else if (row.observation) {
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(...muted); pdf.text("Observação", left, y); y += 5; y += text(row.observation, left, y, right - left, 9, ink) + 4;
+    }
+    if (y + 12 > height - 28) newPage();
+    pdf.setFillColor(...burgundy); pdf.roundedRect(left, y, right - left, 8, 2, 2, "F"); pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(255, 255, 255); pdf.text(row.items.length > 1 ? "GARRAFAS MOVIMENTADAS" : "GARRAFA MOVIMENTADA", left + 4, y + 5.2); y += 8;
+    pdf.setFillColor(243, 238, 240); pdf.rect(left, y, right - left, 7, "F"); pdf.setFont("helvetica", "bold"); pdf.setFontSize(7); pdf.setTextColor(...muted); pdf.text("FOTO", left + 4, y + 4.6); pdf.text("GARRAFA", left + 28, y + 4.6); pdf.text("QTD.", right - 4, y + 4.6, { align: "right" }); y += 7;
+    for (const item of row.items) {
+      const image = await imageData(item.image); const itemWidth = right - left - 54; const lineCount = pdf.splitTextToSize(item.name, itemWidth).length; const rowHeight = Math.max(20, lineCount * 4.8 + 9); if (y + rowHeight > height - 28) { newPage(); pdf.setFillColor(...burgundy); pdf.roundedRect(left, y, right - left, 8, 2, 2, "F"); pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(255, 255, 255); pdf.text("GARRAFAS MOVIMENTADAS · CONTINUAÇÃO", left + 4, y + 5.2); y += 8; }
+      pdf.setDrawColor(225, 216, 219); pdf.setFillColor(255, 255, 255); pdf.rect(left, y, right - left, rowHeight, "FD");
+      if (image) { try { pdf.addImage(image, image.startsWith("data:image/jpeg") ? "JPEG" : "PNG", left + 5, y + 2.5, 14, 15, undefined, "FAST"); } catch { /* imagem opcional */ } }
+      else { pdf.setFillColor(245, 239, 241); pdf.roundedRect(left + 5, y + 3, 14, 14, 1, 1, "F"); pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(...burgundy); pdf.text("—", left + 12, y + 11.5, { align: "center" }); }
+      text(item.name, left + 25, y + 7, itemWidth, 9, ink, "bold"); pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(...burgundy); pdf.text(String(item.quantity), right - 5, y + rowHeight / 2 + 2, { align: "right" });
+      y += rowHeight;
+    }
+    y += 7;
   }
   const pages = pdf.getNumberOfPages(); for (let page = 1; page <= pages; page += 1) { pdf.setPage(page); footer(page, pages); }
   pdf.save(`${title.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}-${dateForFile()}.pdf`);

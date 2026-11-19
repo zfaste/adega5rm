@@ -75,7 +75,10 @@ export function WineCatalog({ initialOpen = false }: { initialOpen?: boolean }) 
     setCameraMessage(""); warmBackgroundModel();
     if (!navigator.mediaDevices?.getUserMedia) return setCameraMessage("A câmera não é suportada neste navegador. Use o envio da galeria.");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" }, aspectRatio: { ideal: 9 / 16 }, width: { ideal: 1080 }, height: { ideal: 1920 } }, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false });
+      const track = stream.getVideoTracks()[0];
+      const capabilities = track?.getCapabilities?.() as MediaTrackCapabilities & { zoom?: { min?: number } };
+      if (track && capabilities.zoom?.min !== undefined) await track.applyConstraints({ advanced: [{ zoom: capabilities.zoom.min }] } as unknown as MediaTrackConstraints);
       streamRef.current = stream; setCameraOpen(true);
     } catch { setCameraMessage("Não conseguimos acessar a câmera. Confira a permissão do navegador ou envie uma foto da galeria."); }
   };

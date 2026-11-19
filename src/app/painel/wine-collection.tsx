@@ -27,6 +27,7 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("relevance");
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({});
   const [cartOpen, setCartOpen] = useState(false);
   const [guideReference, setGuideReference] = useState("");
   const [note, setNote] = useState("");
@@ -57,11 +58,16 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
     setCart((current) => current.some((item) => item.wineId === wineId) ? current : [...current, { wineId, quantity: 1 }]);
     if (window.matchMedia("(max-width: 760px)").matches) setCartOpen(true);
   };
-  const changeQuantity = (wineId: string, quantity: number) => setCart((current) => quantity <= 0
-    ? current.filter((item) => item.wineId !== wineId)
-    : current.map((item) => item.wineId === wineId
-      ? { ...item, quantity: Math.min(quantity, Math.max(1, wines.find((wine) => wine.id === wineId)?.current_stock || 1)) }
-      : item));
+  const commitQuantity = (wineId: string, raw: string) => {
+    const quantity = Number(raw);
+    if (!Number.isInteger(quantity) || quantity < 1) { setQuantityDrafts((current) => ({ ...current, [wineId]: String(cart.find((item) => item.wineId === wineId)?.quantity || 1) })); return; }
+    setCart((current) => current.map((item) => item.wineId === wineId ? { ...item, quantity: Math.min(quantity, Math.max(1, wines.find((wine) => wine.id === wineId)?.current_stock || 1)) } : item));
+    setQuantityDrafts((current) => { const next = { ...current }; delete next[wineId]; return next; });
+  };
+  const removeFromCart = (wineId: string) => {
+    setCart((current) => current.filter((item) => item.wineId !== wineId));
+    setQuantityDrafts((current) => { const next = { ...current }; delete next[wineId]; return next; });
+  };
 
   const issue = async () => {
     setMessage("");
@@ -124,8 +130,8 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
     </div>
     {modal && <span className="cart-prompt">Revise os rótulos e escolha se deseja finalizar esta saída ou adicionar mais garrafas.</span>}
     {cartDetails.length ? <div className="cart-items">{cartDetails.map((item) => <div key={item.wineId}>
-      <span>{item.wine.name}</span><label>Qtd.<input type="number" min="1" max={Math.max(1, item.wine.current_stock)} value={item.quantity} onChange={(event) => changeQuantity(item.wineId, Number(event.target.value))} /></label>
-      <button type="button" onClick={() => changeQuantity(item.wineId, 0)}>Remover</button>
+      <span>{item.wine.name}</span><label>Qtd.<input type="number" inputMode="numeric" min="1" max={Math.max(1, item.wine.current_stock)} value={quantityDrafts[item.wineId] ?? String(item.quantity)} onChange={(event) => setQuantityDrafts((current) => ({ ...current, [item.wineId]: event.target.value }))} onBlur={(event) => commitQuantity(item.wineId, event.target.value)} /></label>
+      <button type="button" onClick={() => removeFromCart(item.wineId)}>Remover</button>
     </div>)}</div> : <span>Adicione garrafas pelos cards.</span>}
     <label>Guia / saída nº<input value={guideReference} onChange={(event) => setGuideReference(event.target.value)} placeholder="Ex.: Guia 042/2026" /></label>
     <label>Destino ou observação<textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Opcional" /></label>

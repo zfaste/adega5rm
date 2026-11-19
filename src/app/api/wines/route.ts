@@ -35,10 +35,31 @@ export async function POST(request: NextRequest) {
   const session = await userId(request);
   if (!session) return NextResponse.json({ error: "Sessão expirada. Entre novamente." }, { status: 401 });
   if (request.headers.get("content-type")?.includes("application/json")) {
-    const payload = await request.json() as { action?: string; wineId?: string; kind?: string; quantity?: unknown; note?: string; guideReference?: string; items?: unknown };
+    const payload = await request.json() as { action?: string; wineId?: string; kind?: string; quantity?: unknown; note?: string; guideReference?: string; items?: unknown; name?: unknown; winery?: unknown; vintage?: unknown; grape?: unknown; type?: unknown; country?: unknown; volumeMl?: unknown; referencePrice?: unknown; location?: unknown; notes?: unknown };
     const { action, wineId, kind, quantity, note, guideReference } = payload;
     const items = Array.isArray(payload.items) ? payload.items as Array<{ wineId?: string; quantity?: unknown }> : [];
     const headersAuth = { apikey: key, Authorization: `Bearer ${session.token}`, "Content-Type": "application/json" };
+    if (action === "update") {
+      if (!wineId) return NextResponse.json({ error: "Garrafa inválida." }, { status: 400 });
+      const text = (value: unknown) => typeof value === "string" ? value.trim() || null : null;
+      const number = (value: unknown) => value === "" || value === null || value === undefined ? null : Number(value);
+      const price = number(payload.referencePrice);
+      const volume = number(payload.volumeMl);
+      const vintage = number(payload.vintage);
+      if (!text(payload.name) || (price !== null && !Number.isFinite(price)) || (volume !== null && (!Number.isInteger(volume) || volume <= 0)) || (vintage !== null && (!Number.isInteger(vintage) || vintage < 1800 || vintage > 2100))) return NextResponse.json({ error: "Confira o nome, preço, volume e safra informados." }, { status: 400 });
+      const update = await fetch(`${url}/rest/v1/wines?id=eq.${encodeURIComponent(wineId)}`, {
+        method: "PATCH", headers: { ...headersAuth, Prefer: "return=representation" },
+        body: JSON.stringify({ name: text(payload.name), winery: text(payload.winery), vintage, grape_variety: text(payload.grape), wine_type: text(payload.type), country: text(payload.country), volume_ml: volume, reference_price: price, location: text(payload.location), history_notes: text(payload.notes) }),
+      });
+      if (!update.ok) { const error = await update.json().catch(() => ({})); return NextResponse.json({ error: error.message || "Não foi possível atualizar a garrafa." }, { status: 400 }); }
+      return NextResponse.json({ ok: true, message: "Dados da garrafa atualizados." });
+    }
+    if (action === "delete") {
+      if (!wineId) return NextResponse.json({ error: "Garrafa inválida." }, { status: 400 });
+      const remove = await fetch(`${url}/rest/v1/wines?id=eq.${encodeURIComponent(wineId)}`, { method: "DELETE", headers: { ...headersAuth, Prefer: "return=representation" } });
+      if (!remove.ok) { const error = await remove.json().catch(() => ({})); return NextResponse.json({ error: error.message || "Não foi possível excluir a garrafa." }, { status: 400 }); }
+      return NextResponse.json({ ok: true, message: "Garrafa excluída." });
+    }
     const rpc = action === "note" ? "append_wine_note" : action === "movement" ? "record_wine_movement" : action === "issue_batch" ? "record_wine_issue_batch" : null;
     if (!rpc || (action !== "issue_batch" && !wineId)) return NextResponse.json({ error: "Solicitação inválida." }, { status: 400 });
     if (action === "issue_batch" && (!items.length || !guideReference?.trim() || items.some((item) => !item.wineId || !Number.isInteger(Number(item.quantity)) || Number(item.quantity) <= 0))) return NextResponse.json({ error: "Informe a guia e ao menos uma garrafa válida para a saída." }, { status: 400 });

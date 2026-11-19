@@ -5,12 +5,13 @@ import { useMemo, useState } from "react";
 export type CollectionWine = {
   id: string; name: string; winery: string | null; vintage: number | null; country: string | null; wine_type: string | null; location: string | null;
   volume_ml: number | null; reference_price: number | null; unit_value: number | null; current_stock: number; quantity_out: number;
-  image_url: string | null; image_path: string | null;
+  grape_variety: string | null; history_notes: string | null; image_url: string | null; image_path: string | null;
 };
 
 type CartItem = { wineId: string; quantity: number };
 type Sort = "relevance" | "alphabetical" | "most-issued" | "lowest-price" | "highest-price" | "lowest-stock";
 type QuickAction = { wine: CollectionWine; mode: "entrada" | "note" } | null;
+type EditData = { name: string; winery: string; vintage: string; grape: string; type: string; country: string; volumeMl: string; referencePrice: string; location: string; notes: string };
 
 const money = (value: number | null) => value === null ? null : value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const imageSource = (wine: CollectionWine) => wine.image_path ? `/api/wine-image?path=${encodeURIComponent(wine.image_path)}` : wine.image_url;
@@ -28,6 +29,9 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
   const [quickQuantity, setQuickQuantity] = useState("1");
   const [quickNote, setQuickNote] = useState("");
   const [quickMessage, setQuickMessage] = useState("");
+  const [editing, setEditing] = useState<CollectionWine | null>(null);
+  const [editData, setEditData] = useState<EditData | null>(null);
+  const [editMessage, setEditMessage] = useState("");
 
   const filtered = useMemo(() => wines.filter((wine) =>
     `${wine.name} ${wine.winery || ""} ${wine.country || ""} ${wine.wine_type || ""} ${wine.location || ""}`
@@ -55,7 +59,7 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
   const issue = async () => {
     setMessage("");
     if (!guideReference.trim()) return setMessage("Informe o número da guia ou da saída.");
-    if (!cartDetails.length) return setMessage("Adicione ao menos um vinho à saída.");
+    if (!cartDetails.length) return setMessage("Adicione ao menos uma garrafa à saída.");
     setSaving(true);
     const response = await fetch("/api/wines", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -69,6 +73,28 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
   const openQuick = (wine: CollectionWine, mode: "entrada" | "note") => {
     setQuickAction({ wine, mode }); setQuickQuantity("1"); setQuickNote(""); setQuickMessage("");
   };
+  const openEditor = (wine: CollectionWine) => {
+    setEditing(wine);
+    setEditData({ name: wine.name, winery: wine.winery || "", vintage: wine.vintage ? String(wine.vintage) : "", grape: wine.grape_variety || "", type: wine.wine_type || "", country: wine.country || "", volumeMl: wine.volume_ml ? String(wine.volume_ml) : "", referencePrice: wine.reference_price !== null ? String(wine.reference_price) : "", location: wine.location || "", notes: wine.history_notes || "" });
+    setEditMessage("");
+  };
+  const changeEdit = (field: keyof EditData, value: string) => setEditData((current) => current ? { ...current, [field]: value } : current);
+  const saveEdit = async () => {
+    if (!editing || !editData) return;
+    setSaving(true); setEditMessage("");
+    const response = await fetch("/api/wines", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update", wineId: editing.id, ...editData }) });
+    const data = await response.json(); setSaving(false);
+    if (!response.ok) return setEditMessage(data.error || "Não foi possível atualizar a garrafa.");
+    setEditMessage(data.message); setTimeout(() => window.location.reload(), 600);
+  };
+  const deleteBottle = async () => {
+    if (!editing || !window.confirm(`Excluir “${editing.name}”? Esta ação não pode ser desfeita.`)) return;
+    setSaving(true); setEditMessage("");
+    const response = await fetch("/api/wines", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", wineId: editing.id }) });
+    const data = await response.json(); setSaving(false);
+    if (!response.ok) return setEditMessage(data.error || "Não foi possível excluir a garrafa.");
+    setEditMessage(data.message); setTimeout(() => window.location.reload(), 500);
+  };
   const submitQuickAction = async () => {
     if (!quickAction) return;
     setQuickMessage("");
@@ -80,7 +106,7 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
       : { action: "movement", wineId: quickAction.wine.id, kind: "entrada", quantity: Number(quickQuantity), note: quickNote };
     const response = await fetch("/api/wines", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const data = await response.json(); setSaving(false);
-    if (!response.ok) return setQuickMessage(data.error || "Não foi possível atualizar o vinho.");
+    if (!response.ok) return setQuickMessage(data.error || "Não foi possível atualizar a garrafa.");
     setQuickMessage(data.message); setTimeout(() => window.location.reload(), 650);
   };
 
@@ -102,8 +128,8 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
   </aside>;
 
   return <section className="collection-panel" id="relacao">
-    <div className="collection-top"><div><p>ACERVO VISUAL</p><h2>Vinhos em adega</h2><span>Selecione as garrafas para preparar uma saída, registrar entrada ou adicionar observações.</span></div>
-      <div className="collection-controls"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por vinho, vinícola, país ou local" />
+    <div className="collection-top"><div><p>ACERVO VISUAL</p><h2>Garrafas em adega</h2><span>Selecione as garrafas para preparar uma saída, registrar entrada ou adicionar observações.</span></div>
+      <div className="collection-controls"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por garrafa, vinícola, país ou local" />
         <label>Ordenar<select value={sort} onChange={(event) => setSort(event.target.value as Sort)}><option value="relevance">Relevância</option><option value="alphabetical">Ordem alfabética</option><option value="most-issued">Mais retirados</option><option value="lowest-price">Menor preço</option><option value="highest-price">Maior preço</option><option value="lowest-stock">Menor estoque</option></select></label>
       </div>
     </div>
@@ -115,12 +141,13 @@ export function WineCollection({ wines }: { wines: CollectionWine[] }) {
     <div className="collection-layout"><div className="wine-grid">{filtered.length ? filtered.map((wine) => {
       const source = imageSource(wine); const added = cart.some((item) => item.wineId === wine.id);
       return <article className="wine-card" key={wine.id}><div className="wine-card-image">{source ? <img src={source} alt={`Garrafa ${wine.name}`} /> : <span>Sem foto</span>}{wine.current_stock <= 0 && <b>Esgotado</b>}</div>
-        <div className="wine-card-info"><small className="wine-location">{wine.location || "Localização não informada"}</small><h3>{wine.name}</h3><p>{[wine.wine_type, wine.volume_ml && `${wine.volume_ml} ml`].filter(Boolean).join(" · ") || "Vinho"}</p>
+        <div className="wine-card-info"><small className="wine-location">{wine.location || "Localização não informada"}</small><h3>{wine.name}</h3><p>{[wine.wine_type, wine.volume_ml && `${wine.volume_ml} ml`].filter(Boolean).join(" · ") || "Garrafa"}</p>
           <strong>{money(wine.reference_price ?? wine.unit_value) || "Valor não informado"}</strong><div><span className={wine.current_stock > 0 ? "availability" : "availability empty"}>{wine.current_stock} em estoque</span><button type="button" disabled={wine.current_stock <= 0 || added} onClick={() => add(wine.id)}>{added ? "Na saída" : "+ Saída"}</button></div>
-          <div className="card-tools"><button type="button" onClick={() => openQuick(wine, "entrada")}>+ Entrada</button><button type="button" onClick={() => openQuick(wine, "note")}>Observação</button></div>
+          <div className="card-tools"><button type="button" onClick={() => openQuick(wine, "entrada")}>+ Entrada</button><button type="button" onClick={() => openQuick(wine, "note")}>Observação</button><button type="button" onClick={() => openEditor(wine)}>Editar</button></div>
         </div>
       </article>;
-    }) : <p className="collection-empty">Nenhum vinho encontrado com esse filtro.</p>}</div><div className="desktop-issue-cart">{cartPanel()}</div></div>
+    }) : <p className="collection-empty">Nenhuma garrafa encontrada com esse filtro.</p>}</div><div className="desktop-issue-cart">{cartPanel()}</div></div>
     {cartOpen && <div className="issue-modal" role="dialog" aria-modal="true" aria-label="Saída em preparação">{cartPanel(true)}</div>}
+    {editing && editData && <div className="edit-modal" role="dialog" aria-modal="true" aria-label="Editar dados da garrafa"><section className="edit-card"><div className="edit-heading"><div><p>EDITAR GARRAFA</p><h3>{editing.name}</h3></div><button type="button" onClick={() => setEditing(null)}>Fechar</button></div><div className="edit-grid"><label>Nome<input value={editData.name} onChange={(event) => changeEdit("name", event.target.value)} /></label><label>Vinícola<input value={editData.winery} onChange={(event) => changeEdit("winery", event.target.value)} /></label><label>Safra<input type="number" min="1800" max="2100" value={editData.vintage} onChange={(event) => changeEdit("vintage", event.target.value)} /></label><label>Uva<input value={editData.grape} onChange={(event) => changeEdit("grape", event.target.value)} /></label><label>Tipo<input value={editData.type} onChange={(event) => changeEdit("type", event.target.value)} /></label><label>País<input value={editData.country} onChange={(event) => changeEdit("country", event.target.value)} /></label><label>Volume (ml)<input type="number" min="1" value={editData.volumeMl} onChange={(event) => changeEdit("volumeMl", event.target.value)} /></label><label>Preço de referência<input type="number" min="0" step="0.01" value={editData.referencePrice} onChange={(event) => changeEdit("referencePrice", event.target.value)} /></label><label>Localização<input list="edit-locations" placeholder="Ex.: Adega 5ª RM" value={editData.location} onChange={(event) => changeEdit("location", event.target.value)} /><datalist id="edit-locations"><option value="Adega 5ª RM" /><option value="BSup" /></datalist></label><label className="edit-notes">Observações<textarea value={editData.notes} onChange={(event) => changeEdit("notes", event.target.value)} /></label></div><div className="edit-actions"><button className="save-edit" type="button" onClick={saveEdit} disabled={saving}>{saving ? "Salvando..." : "Salvar alterações"}</button><button className="delete-bottle" type="button" onClick={deleteBottle} disabled={saving}>Excluir garrafa</button></div>{editMessage && <p className="edit-message">{editMessage}</p>}</section></div>}
   </section>;
 }

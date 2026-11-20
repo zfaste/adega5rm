@@ -28,7 +28,9 @@ async function userId(request: NextRequest) {
   const response = await fetch(`${url}/auth/v1/user`, { headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: "no-store" });
   if (!response.ok) return null;
   const user = await response.json();
-  return { id: user.id as string, token };
+  const membership = await fetch(`${url}/rest/v1/institution_members?select=institution_id,role&user_id=eq.${encodeURIComponent(user.id)}&is_active=eq.true&limit=1`, { headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: "no-store" });
+  const [member] = membership.ok ? await membership.json() : [];
+  return member ? { id: user.id as string, token, institutionId: member.institution_id as string, role: member.role as "admin" | "operator" | "viewer" } : null;
 }
 
 export async function POST(request: NextRequest) {
@@ -46,7 +48,8 @@ export async function POST(request: NextRequest) {
       const price = number(payload.referencePrice);
       const volume = number(payload.volumeMl);
       const vintage = number(payload.vintage);
-      if (!text(payload.name) || (price !== null && !Number.isFinite(price)) || (volume !== null && (!Number.isInteger(volume) || volume <= 0)) || (vintage !== null && (!Number.isInteger(vintage) || vintage < 1800 || vintage > 2100))) return NextResponse.json({ error: "Confira o nome, preço, volume e safra informados." }, { status: 400 });
+      if (session.role === "viewer") return NextResponse.json({ error: "Seu perfil é somente para consulta." }, { status: 403 });
+      if (!text(payload.name) || !text(payload.location) || (price !== null && !Number.isFinite(price)) || (volume !== null && (!Number.isInteger(volume) || volume <= 0)) || (vintage !== null && (!Number.isInteger(vintage) || vintage < 1800 || vintage > 2100))) return NextResponse.json({ error: "Confira o nome, localização, preço, volume e safra informados." }, { status: 400 });
       const update = await fetch(`${url}/rest/v1/wines?id=eq.${encodeURIComponent(wineId)}`, {
         method: "PATCH", headers: { ...headersAuth, Prefer: "return=representation" },
         body: JSON.stringify({ name: text(payload.name), winery: text(payload.winery), vintage, grape_variety: text(payload.grape), wine_type: text(payload.type), country: text(payload.country), volume_ml: volume, reference_price: price, location: text(payload.location), history_notes: text(payload.notes) }),
@@ -54,11 +57,11 @@ export async function POST(request: NextRequest) {
       if (!update.ok) { const error = await update.json().catch(() => ({})); return NextResponse.json({ error: error.message || "Não foi possível atualizar a garrafa." }, { status: 400 }); }
       return NextResponse.json({ ok: true, message: "Dados da garrafa atualizados." });
     }
-    if (action === "delete") {
+    if (action === "archive") {
       if (!wineId) return NextResponse.json({ error: "Garrafa inválida." }, { status: 400 });
-      const remove = await fetch(`${url}/rest/v1/wines?id=eq.${encodeURIComponent(wineId)}`, { method: "DELETE", headers: { ...headersAuth, Prefer: "return=representation" } });
-      if (!remove.ok) { const error = await remove.json().catch(() => ({})); return NextResponse.json({ error: error.message || "Não foi possível excluir a garrafa." }, { status: 400 }); }
-      return NextResponse.json({ ok: true, message: "Garrafa excluída." });
+      const archive = await fetch(`${url}/rest/v1/rpc/archive_wine`, { method: "POST", headers: headersAuth, body: JSON.stringify({ p_wine_id: wineId }) });
+      if (!archive.ok) { const error = await archive.json().catch(() => ({})); return NextResponse.json({ error: error.message || "Não foi possível arquivar a garrafa." }, { status: 400 }); }
+      return NextResponse.json({ ok: true, message: "Garrafa arquivada. O histórico de movimentações foi preservado." });
     }
     const rpc = action === "note" ? "append_wine_note" : action === "movement" ? "record_wine_movement" : action === "issue_batch" ? "record_wine_issue_batch" : null;
     if (!rpc || (action !== "issue_batch" && !wineId)) return NextResponse.json({ error: "Solicitação inválida." }, { status: 400 });
@@ -94,8 +97,9 @@ export async function POST(request: NextRequest) {
       const upload = await fetch(`${url}/storage/v1/object/wine-images/${imagePath}`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${session.token}`, "Content-Type": photo.type, "x-upsert": "false" }, body: await photo.arrayBuffer() });
       if (!upload.ok) return NextResponse.json({ error: "Não foi possível enviar a fotografia." }, { status: 500 });
     }
+    if (session.role === "viewer") return NextResponse.json({ error: "Seu perfil é somente para consulta." }, { status: 403 });
     const record = {
-      user_id: session.id, name, winery: String(data.get("winery") || "").trim() || null, vintage: toInteger(data.get("vintage")), grape_variety: String(data.get("grape") || "").trim() || null, wine_type: String(data.get("type") || "").trim() || null, country: String(data.get("country") || "").trim() || null, volume_ml: toInteger(data.get("volumeMl")), reference_price: toNumber(data.get("referencePrice")), unit_value: toNumber(data.get("acquisitionValue")), location, minimum_stock: minimumStock, initial_quantity: quantity, quantity_out: 0, current_stock: quantity, history_notes: String(data.get("notes") || "").trim() || null, image_path: imagePath, image_url: String(data.get("imageUrl") || "").trim() || null, image_source: String(data.get("imageSource") || "").trim() || (imagePath ? "Envio do usuário" : null), image_license: String(data.get("imageLicense") || "").trim() || null, source_provider: String(data.get("sourceProvider") || "").trim() || "Manual", source_url: String(data.get("sourceUrl") || "").trim() || null,
+      user_id: session.id, institution_id: session.institutionId, name, winery: String(data.get("winery") || "").trim() || null, vintage: toInteger(data.get("vintage")), grape_variety: String(data.get("grape") || "").trim() || null, wine_type: String(data.get("type") || "").trim() || null, country: String(data.get("country") || "").trim() || null, volume_ml: toInteger(data.get("volumeMl")), reference_price: toNumber(data.get("referencePrice")), unit_value: toNumber(data.get("acquisitionValue")), location, minimum_stock: minimumStock, initial_quantity: quantity, quantity_out: 0, current_stock: quantity, history_notes: String(data.get("notes") || "").trim() || null, image_path: imagePath, image_url: String(data.get("imageUrl") || "").trim() || null, image_source: String(data.get("imageSource") || "").trim() || (imagePath ? "Envio do usuário" : null), image_license: String(data.get("imageLicense") || "").trim() || null, source_provider: String(data.get("sourceProvider") || "").trim() || "Manual", source_url: String(data.get("sourceUrl") || "").trim() || null,
     };
     const headersAuth = { apikey: key, Authorization: `Bearer ${session.token}`, "Content-Type": "application/json", Prefer: "return=representation" };
     const create = await fetch(`${url}/rest/v1/wines`, { method: "POST", headers: headersAuth, body: JSON.stringify(record) });
@@ -138,10 +142,10 @@ export async function POST(request: NextRequest) {
   const existing = await fetch(`${url}/rest/v1/wines?select=id&limit=1`, { headers: headersAuth });
   if ((await existing.json()).length) return NextResponse.json({ error: "Já existe estoque cadastrado. A importação inicial só pode ser feita uma vez." }, { status: 409 });
   const totals = consolidatedWines.reduce((result, wine) => ({ initial: result.initial + wine.initialQuantity, out: result.out + wine.quantityOut, stock: result.stock + wine.currentStock }), { initial: 0, out: 0, stock: 0 });
-  const importResponse = await fetch(`${url}/rest/v1/wine_imports`, { method: "POST", headers: headersAuth, body: JSON.stringify({ user_id: session.id, source_file_name: file.name, records_count: consolidatedWines.length, initial_quantity: totals.initial, quantity_out: totals.out, current_stock: totals.stock }) });
+  const importResponse = await fetch(`${url}/rest/v1/wine_imports`, { method: "POST", headers: headersAuth, body: JSON.stringify({ user_id: session.id, institution_id: session.institutionId, source_file_name: file.name, records_count: consolidatedWines.length, initial_quantity: totals.initial, quantity_out: totals.out, current_stock: totals.stock }) });
   if (!importResponse.ok) return NextResponse.json({ error: "Não foi possível registrar a importação." }, { status: 500 });
   const [batch] = await importResponse.json();
-  const wineResponse = await fetch(`${url}/rest/v1/wines`, { method: "POST", headers: headersAuth, body: JSON.stringify(consolidatedWines.map((wine) => ({ user_id: session.id, import_id: batch.id, name: wine.name, unit_value: wine.unitValue, initial_quantity: wine.initialQuantity, quantity_out: wine.quantityOut, current_stock: wine.currentStock, history_notes: wine.historyNotes }))) });
+  const wineResponse = await fetch(`${url}/rest/v1/wines`, { method: "POST", headers: headersAuth, body: JSON.stringify(consolidatedWines.map((wine) => ({ user_id: session.id, institution_id: session.institutionId, import_id: batch.id, name: wine.name, location: "Localização a confirmar", unit_value: wine.unitValue, initial_quantity: wine.initialQuantity, quantity_out: wine.quantityOut, current_stock: wine.currentStock, history_notes: wine.historyNotes }))) });
   if (!wineResponse.ok) { console.error("Wine import failed", wineResponse.status, await wineResponse.text()); return NextResponse.json({ error: "A importação não foi concluída. Tente novamente." }, { status: 500 }); }
   return NextResponse.json({ ok: true, records: consolidatedWines.length, stock: totals.stock });
 }

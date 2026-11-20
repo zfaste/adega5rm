@@ -7,14 +7,13 @@ import { WineCatalog } from "./wine-catalog";
 import { WineImporter } from "./wine-importer";
 import { Movement, MovementReport } from "./movement-report";
 import { DashboardInsights } from "./dashboard-insights";
-import { AccessManagement } from "./access-management";
 
 type Wine = CollectionWine & { unit_value: number | null; initial_quantity: number; quantity_out: number; current_stock: number; minimum_stock: number; history_notes: string | null };
 type Role = "admin" | "operator" | "viewer";
-type Tab = "dashboard" | "acervo" | "cadastro" | "movimentacoes" | "relacao" | "acessos";
+type Tab = "dashboard" | "acervo" | "cadastro" | "movimentacoes" | "relacao";
 const navItems: Array<{ id: Tab; label: string }> = [{ id: "dashboard", label: "Painel" }, { id: "acervo", label: "Acervo visual" }, { id: "cadastro", label: "Cadastrar garrafa" }, { id: "movimentacoes", label: "Movimentações" }, { id: "relacao", label: "Relação de garrafas" }];
 
-function Icon({ name }: { name: "menu" | "close" | "dashboard" | "archive" | "plus" | "list" | "movements" | "users" | "logout" }) {
+function Icon({ name }: { name: "menu" | "close" | "dashboard" | "archive" | "plus" | "list" | "movements" | "logout" }) {
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   if (name === "menu") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M4 6h16M4 12h16M4 18h16" /></svg>;
   if (name === "close") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="m6 6 12 12M18 6 6 18" /></svg>;
@@ -22,18 +21,17 @@ function Icon({ name }: { name: "menu" | "close" | "dashboard" | "archive" | "pl
   if (name === "archive") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M4 7h16v13H4zM3 4h18v3H3zM9 11h6" /></svg>;
   if (name === "plus") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M12 5v14M5 12h14" /></svg>;
   if (name === "movements") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M4 7h11M12 3l4 4-4 4M20 17H9M12 13l-4 4 4 4" /></svg>;
-  if (name === "users") return <svg viewBox="0 0 24 24" aria-hidden="true"><circle {...common} cx="9" cy="8" r="3" /><path {...common} d="M3 20c.6-3.5 2.7-5 6-5s5.4 1.5 6 5M17 11a3 3 0 1 0-1.4-5.7M18 15c1.6.8 2.6 2.3 3 4.4" /></svg>;
   if (name === "logout") return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10" /></svg>;
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path {...common} d="M9 6h11M9 12h11M9 18h11" /><circle {...common} cx="4" cy="6" r="1" /><circle {...common} cx="4" cy="12" r="1" /><circle {...common} cx="4" cy="18" r="1" /></svg>;
 }
-const tabIcon = (tab: Tab) => tab === "dashboard" ? "dashboard" : tab === "acervo" ? "archive" : tab === "cadastro" ? "plus" : tab === "movimentacoes" ? "movements" : tab === "acessos" ? "users" : "list";
-const eyebrow = (tab: Tab) => tab === "dashboard" ? "VISÃO GERAL" : tab === "acervo" ? "ACERVO VISUAL" : tab === "cadastro" ? "CATÁLOGO INTELIGENTE" : tab === "movimentacoes" ? "CONTROLE OPERACIONAL" : tab === "acessos" ? "GESTÃO INSTITUCIONAL" : "CONTROLE DE ESTOQUE";
-const heading = (tab: Tab) => tab === "dashboard" ? "Painel da Adega" : tab === "acervo" ? "Garrafas em adega" : tab === "cadastro" ? "Cadastrar garrafa" : tab === "movimentacoes" ? "Entradas e saídas" : tab === "acessos" ? "Acessos e perfis" : "Relação de garrafas";
+const tabIcon = (tab: Tab) => tab === "dashboard" ? "dashboard" : tab === "acervo" ? "archive" : tab === "cadastro" ? "plus" : tab === "movimentacoes" ? "movements" : "list";
+const eyebrow = (tab: Tab) => tab === "dashboard" ? "VISÃO GERAL" : tab === "acervo" ? "ACERVO VISUAL" : tab === "cadastro" ? "CATÁLOGO INTELIGENTE" : tab === "movimentacoes" ? "CONTROLE OPERACIONAL" : "CONTROLE DE ESTOQUE";
+const heading = (tab: Tab) => tab === "dashboard" ? "Painel da Adega" : tab === "acervo" ? "Garrafas em adega" : tab === "cadastro" ? "Cadastrar garrafa" : tab === "movimentacoes" ? "Entradas e saídas" : "Relação de garrafas";
 
 export function PanelTabs({ wines, movements, totalStock, lowStock, totalValue, role }: { wines: Wine[]; movements: Movement[]; totalStock: number; lowStock: number; totalValue: number; role: Role }) {
   const router = useRouter(); const searchParams = useSearchParams(); const [menuOpen, setMenuOpen] = useState(false);
   const canOperate = role === "admin" || role === "operator"; const isAdmin = role === "admin";
-  const availableNav = [...navItems.filter((item) => canOperate || item.id !== "cadastro"), ...(isAdmin ? [{ id: "acessos" as Tab, label: "Acessos e perfis" }] : [])];
+  const availableNav = navItems.filter((item) => canOperate || item.id !== "cadastro");
   const requestedTab = searchParams.get("tab");
   const tab: Tab = availableNav.some((item) => item.id === requestedTab) ? requestedTab as Tab : "dashboard";
   const go = (next: Tab) => { router.replace(next === "dashboard" ? "/painel" : `/painel?tab=${next}`, { scroll: false }); setMenuOpen(false); };
@@ -50,7 +48,6 @@ export function PanelTabs({ wines, movements, totalStock, lowStock, totalValue, 
       {tab === "acervo" && <WineCollection wines={wines} canOperate={canOperate} canArchive={isAdmin} />}
       {tab === "cadastro" && canOperate && <><WineCatalog initialOpen hideToggle />{!wines.length && <section className="import-box"><div><p>IMPORTAÇÃO INICIAL</p><h2>Carregue seu estoque atual</h2><span>Use o CSV exportado da planilha. O sistema valida os totais antes de gravar os dados.</span></div><WineImporter /></section>}</>}
       {tab === "movimentacoes" && <MovementReport movements={movements} />}
-      {tab === "acessos" && isAdmin && <AccessManagement />}
       {tab === "relacao" && <section className="wine-list"><div className="section-heading"><div><p>CONTROLE DE ESTOQUE</p><h2>Relação de garrafas</h2></div><span>{wines.length ? `${wines.length} rótulos cadastrados` : "Aguardando importação"}</span></div><div className="table-wrap"><table><thead><tr><th>Garrafa</th><th>Nome</th><th>Valor de referência</th><th>Quantidade inicial</th><th>Saídas históricas</th><th>Em adega</th><th>Status</th><th>Observações</th></tr></thead><tbody>{wines.length ? wines.map((wine) => { const image = wine.image_path ? `/api/wine-image?path=${encodeURIComponent(wine.image_path)}` : wine.image_url ? `/api/wine-image?url=${encodeURIComponent(wine.image_url)}` : null; const price = wine.reference_price ?? wine.unit_value; const low = wine.current_stock <= wine.minimum_stock; return <tr key={wine.id}><td>{image ? <img className="table-bottle" src={image} alt={`Garrafa ${wine.name}`} /> : <span className="table-bottle empty">—</span>}</td><td><strong>{wine.name}</strong></td><td>{price !== null ? price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "Não informado"}</td><td>{wine.initial_quantity}</td><td>{wine.quantity_out}</td><td>{wine.current_stock}</td><td><span className={low ? "stock-tag low" : "stock-tag"}>{low ? `Atenção (mín. ${wine.minimum_stock})` : "Disponível"}</span></td><td>{wine.history_notes ? <details><summary>Ver</summary><p>{wine.history_notes}</p></details> : "-"}</td></tr>; }) : <tr><td colSpan={8}><div className="empty-state"><strong>Nenhuma garrafa cadastrada</strong><span>Use o cadastro de garrafas para adicionar o primeiro item.</span></div></td></tr>}</tbody></table></div></section>}
     </section>
   </main>;

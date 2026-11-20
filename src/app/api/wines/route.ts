@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
       const parsed = Number.parseInt(raw, 10);
       return Number.isFinite(parsed) ? parsed : null;
     };
-    const quantity = toInteger(data.get("quantity")); const minimumStock = toInteger(data.get("minimumStock"));
-    if (!name || quantity === null || quantity < 0 || minimumStock === null || minimumStock < 0) return NextResponse.json({ error: "Informe nome, quantidade inicial e estoque mínimo válidos." }, { status: 400 });
+    const quantity = toInteger(data.get("quantity")); const minimumStock = toInteger(data.get("minimumStock")); const location = String(data.get("location") || "").trim();
+    if (!name || !location || quantity === null || quantity < 0 || minimumStock === null || minimumStock < 0) return NextResponse.json({ error: "Informe nome, localização e quantidade válidos." }, { status: 400 });
     const photo = data.get("photo"); let imagePath: string | null = null;
     if (photo instanceof File && photo.size > 0) {
       if (!["image/jpeg", "image/png", "image/webp"].includes(photo.type) || photo.size > 5 * 1024 * 1024) return NextResponse.json({ error: "A foto deve ser JPG, PNG ou WebP de até 5 MB." }, { status: 400 });
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       if (!upload.ok) return NextResponse.json({ error: "Não foi possível enviar a fotografia." }, { status: 500 });
     }
     const record = {
-      user_id: session.id, name, winery: String(data.get("winery") || "").trim() || null, vintage: toInteger(data.get("vintage")), grape_variety: String(data.get("grape") || "").trim() || null, wine_type: String(data.get("type") || "").trim() || null, country: String(data.get("country") || "").trim() || null, volume_ml: toInteger(data.get("volumeMl")), reference_price: toNumber(data.get("referencePrice")), unit_value: toNumber(data.get("acquisitionValue")), location: String(data.get("location") || "").trim() || null, minimum_stock: minimumStock, initial_quantity: quantity, quantity_out: 0, current_stock: quantity, history_notes: String(data.get("notes") || "").trim() || null, image_path: imagePath, image_url: String(data.get("imageUrl") || "").trim() || null, image_source: String(data.get("imageSource") || "").trim() || (imagePath ? "Envio do usuário" : null), image_license: String(data.get("imageLicense") || "").trim() || null, source_provider: String(data.get("sourceProvider") || "").trim() || "Manual", source_url: String(data.get("sourceUrl") || "").trim() || null,
+      user_id: session.id, name, winery: String(data.get("winery") || "").trim() || null, vintage: toInteger(data.get("vintage")), grape_variety: String(data.get("grape") || "").trim() || null, wine_type: String(data.get("type") || "").trim() || null, country: String(data.get("country") || "").trim() || null, volume_ml: toInteger(data.get("volumeMl")), reference_price: toNumber(data.get("referencePrice")), unit_value: toNumber(data.get("acquisitionValue")), location, minimum_stock: minimumStock, initial_quantity: quantity, quantity_out: 0, current_stock: quantity, history_notes: String(data.get("notes") || "").trim() || null, image_path: imagePath, image_url: String(data.get("imageUrl") || "").trim() || null, image_source: String(data.get("imageSource") || "").trim() || (imagePath ? "Envio do usuário" : null), image_license: String(data.get("imageLicense") || "").trim() || null, source_provider: String(data.get("sourceProvider") || "").trim() || "Manual", source_url: String(data.get("sourceUrl") || "").trim() || null,
     };
     const headersAuth = { apikey: key, Authorization: `Bearer ${session.token}`, "Content-Type": "application/json", Prefer: "return=representation" };
     const create = await fetch(`${url}/rest/v1/wines`, { method: "POST", headers: headersAuth, body: JSON.stringify(record) });
